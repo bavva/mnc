@@ -3,6 +3,10 @@
 #include <iostream>
 #include <algorithm>
 
+/* global options */
+bool appIsServer = false;
+long appPort = 0;
+
 /* forward declarations */
 void printHelpAndExit(void);
 void printHelp(void);
@@ -36,12 +40,25 @@ void printCreatorInfo(void)
 
 int main(int argc, char **argv)
 {
-    std::string command;
-
     if (argc != expectedParamCount + 1)
         printUsageAndExit();
 
+    // first parameter validation. can be either s or c
+    std::string appMode(argv[1]);
+    if (appMode == "s" || appMode == "S")
+        appIsServer = true;
+    else if (appMode == "c" || appMode == "C")
+        appIsServer = false;
+    else
+        printUsageAndExit();
+
+    // second parameter validation. should be a port number
+    appPort = atol(argv[2]);
+    if (appPort <= 0 || appPort > 65535)
+        printUsageAndExit();
+
     // start infinite loop to process commands
+    std::string command;
     while(std::cin >> command)
     {
         // convert to lower case to compare
