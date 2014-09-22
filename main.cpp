@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <algorithm>
 
 /* forward declarations */
 void printHelpAndExit(void);
@@ -11,15 +12,20 @@ void printCreatorInfo(void);
 const int expectedParamCount = 2;
 
 /* functionalities */
-void printHelpAndExit(void)
+void printUsageAndExit(void)
 {
-    printHelp();
+    printf("Usage: assignment1 <s|c> <port>\n");
     exit(0);
 }
 
 void printHelp(void)
 {
-    printf("Usage: assignment1 <s|c> <port>\n");
+    printf("Following commands are available to use\n"
+           "1. CREATOR: Displays full name, UBIT name and UB email address of creator\n"
+           "2. HELP: Displays this help information\n"
+           "3. MYIP: Displays the IP address of this process\n"
+           "4. MYPORT: Displays the port on which this process is listening for incoming connections\n"
+    );
 }
 
 void printCreatorInfo(void)
@@ -30,8 +36,22 @@ void printCreatorInfo(void)
 
 int main(int argc, char **argv)
 {
+    std::string command;
+
     if (argc != expectedParamCount + 1)
-        printHelpAndExit();
+        printUsageAndExit();
+
+    // start infinite loop to process commands
+    while(std::cin >> command)
+    {
+        // convert to lower case to compare
+        std::transform(command.begin(), command.end(), command.begin(), tolower);
+
+        if (command == "creator")
+            printCreatorInfo();
+        else if (command == "help")
+            printHelp();
+    }
 
     return 0;
 }
