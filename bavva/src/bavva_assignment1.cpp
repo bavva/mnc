@@ -22,8 +22,11 @@
  */
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
 
 #include "../include/global.h"
+#include "../include/FSServer.h"
+#include "../include/FSClient.h"
 
 using namespace std;
 
@@ -36,7 +39,7 @@ const int correctParamCount = 2;
 void printUsageAndExit(void)
 {
     printf("Usage: assignment1 <s|c> <port>\n");
-    exit(0);
+    exit(-1);
 }
 
 int main(int argc, char **argv)
