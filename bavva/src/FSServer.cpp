@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include <cstring>
+#include <algorithm>
 
 #include "../include/FSServer.h"
 
@@ -12,6 +13,8 @@ static const int MAXPENDING = 5;
 // class implementation
 FSServer::FSServer(int port):port(port)
 {
+    write_here = 0;
+
     FD_ZERO(&read_fds);
     FD_ZERO(&write_fds);
 
@@ -124,8 +127,32 @@ void FSServer::do_bind(void)
     }
 }
 
+void FSServer::process_command(std::string& command)
+{
+    if (command == "creator")
+    {
+        printf("Bharadwaj Avva\nbavva\nbavva@buffalo.edu\n");
+        printf("I have read and understood the course academic integrity policy located at http://www.cse.buffalo.edu/faculty/dimitrio/courses/cse4589_f14/index.html#integrity\n");
+    }
+    else if (command == "help")
+    {
+        printf("Following commands are available to use\n"
+                "1. CREATOR: Displays full name, UBIT name and UB email address of creator\n"
+                "2. HELP: Displays this help information\n"
+                "3. MYIP: Displays the IP address of this process\n"
+                "4. MYPORT: Displays the port on which this process is listening for incoming connections\n");
+    }
+    else
+    {
+        std::cout << "Unknown command " << command << " entered\n";
+    }
+}
+
 void FSServer::start(void)
 {
+    int nbytes;
+    std::string command;
+
     insert_readfd(STDIN_FILENO);
     insert_readfd(listen_fd);
 
@@ -136,9 +163,28 @@ void FSServer::start(void)
 
         if (FD_ISSET(STDIN_FILENO, &read_fds))
         {
-            std::string command;
-            std::cin >> command;
-            std::cout << "command is " << command;
+            if ((nbytes = read(STDIN_FILENO, command_buffer + write_here, 
+                            COMMAND_BUFFER - write_here)) <= 0)
+            {
+                if (nbytes == 0)
+                    printf("Exiting at user's request\n");
+                else
+                    printf("recv failed with %d\n", nbytes);
+
+                break;
+            }
+
+            write_here += nbytes;
+
+            if (command_buffer[write_here - 1] == '\n')
+            {
+                command.assign(command_buffer, 0, write_here - 1);
+                std::transform(command.begin(), command.end(), command.begin(), tolower);
+                write_here = 0;
+
+                process_command(command);
+                command.clear();
+            }
         }
     }
 }
