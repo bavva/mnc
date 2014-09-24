@@ -30,10 +30,6 @@
 
 using namespace std;
 
-// global options
-bool appIsServer = false;
-int appPort = 0;
-
 const int correctParamCount = 2;
 
 void printUsageAndExit(void)
@@ -44,6 +40,9 @@ void printUsageAndExit(void)
 
 int main(int argc, char **argv)
 {
+    bool appIsServer = false;
+    int appPort = 0;
+
     if (argc != correctParamCount + 1)
         printUsageAndExit();
 
