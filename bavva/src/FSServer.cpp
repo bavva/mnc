@@ -4,6 +4,12 @@
 
 #include "../include/FSServer.h"
 
+FSServer::FSServer(int port):port(port)
+{
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+}
+
 void FSServer::update_maxfd(void)
 {
     unsigned max = 0;

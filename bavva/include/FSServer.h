@@ -20,7 +20,7 @@ class FSServer
     int max_fd;                         // maximum of all fds
 
     public:
-    FSServer(int port):port(port){};
+    FSServer(int port);
     ~FSServer(){};
 
     // functions
