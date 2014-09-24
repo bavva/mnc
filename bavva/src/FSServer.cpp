@@ -106,14 +106,14 @@ void FSServer::do_bind(void)
     }
 
     //Construct local address structure
-    struct sockaddr_in servAddr;                    // Local address
-    memset(&servAddr, 0 , sizeof(servAddr));        // Zero out structure
-    servAddr.sin_family = AF_INET;                  // IPv4 address family
-    servAddr.sin_addr.s_addr = htonl(INADDR_ANY);   // Any incoming interface
-    servAddr.sin_port = htons(port);                // Local port
+    struct sockaddr_in local_address;                           // Local address
+    memset(&local_address, 0 , sizeof(local_address));          // Zero out structure
+    local_address.sin_family = AF_INET;                         // IPv4 address family
+    local_address.sin_addr.s_addr = htonl(INADDR_ANY);          // Any incoming interface
+    local_address.sin_port = htons(port);                       // Local port
 
     // Bind to the local address
-    if(bind(listen_fd, (struct sockaddr*) &servAddr, sizeof(servAddr)) < 0)
+    if(bind(listen_fd, (struct sockaddr*) &local_address, sizeof(local_address)) < 0)
     {
         printf("bind() failed");
         exit(-1);
@@ -141,6 +141,10 @@ void FSServer::process_command(std::string& command)
                 "2. HELP: Displays this help information\n"
                 "3. MYIP: Displays the IP address of this process\n"
                 "4. MYPORT: Displays the port on which this process is listening for incoming connections\n");
+    }
+    else if (command == "myport")
+    {
+        printf("Port number:%d\n", port);
     }
     else
     {
