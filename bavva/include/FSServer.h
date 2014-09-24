@@ -23,21 +23,24 @@ class FSServer
     char command_buffer[COMMAND_BUFFER];    // buffer to keep command data until completely entered
     int write_here;                     // write from command_buffer + write_here
 
+    std::string local_ip;               // IP address of current process
+
     public:
     FSServer(int port);
     ~FSServer();
 
     // functions
-    void process_command(std::string& command);
     void start(void);
+
+    // private functions
+    private:
+    void do_bind(void);
+    void process_command(std::string& command);
+    void update_localip(void);
     void update_maxfd(void);
     void insert_readfd(int fd);
     void remove_readfd(int fd);
     void insert_writefd(int fd);
     void remove_writefd(int fd);
-
-    // private functions
-    private:
-    void do_bind(void);
 };
 #endif /* _FSSERVER_H_ */

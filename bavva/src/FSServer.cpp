@@ -7,6 +7,9 @@
 
 #include "../include/FSServer.h"
 
+#define IP_IN_INTERNET "8.8.8.8"
+#define PORT_OF_IP_IN_INTERNET  53
+
 // parameters
 static const int MAXPENDING = 5;
 
@@ -19,11 +22,48 @@ FSServer::FSServer(int port):port(port)
     FD_ZERO(&write_fds);
 
     do_bind();
+    update_localip();
 }
 
 FSServer::~FSServer()
 {
     close(listen_fd);
+}
+
+void FSServer::update_localip(void)
+{
+    struct sockaddr_in remote_address;
+    int sockfd;
+
+    // create socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+    {
+        printf("Unabled to create datagram socket\n");
+        return;
+    }
+
+    memset((char *)&remote_address, 0, sizeof(remote_address));
+    remote_address.sin_family = AF_INET;
+    remote_address.sin_port = htons(PORT_OF_IP_IN_INTERNET);
+    if (inet_aton(IP_IN_INTERNET, &remote_address.sin_addr) == 0)
+    {
+        printf("inet_aton failed\n");
+        return;
+    }
+
+    if (connect(sockfd, (struct sockaddr *)&remote_address, sizeof(remote_address)) < 0)
+    {
+        printf("UDP connect failed\n");
+        return;
+    }
+
+    struct sockaddr_in local_address;
+    socklen_t addressLength = sizeof(local_address);
+    getsockname(sockfd, (struct sockaddr*)&local_address, &addressLength);
+
+    local_ip = inet_ntoa(local_address.sin_addr);
+
+    close(sockfd);
 }
 
 void FSServer::update_maxfd(void)
@@ -141,6 +181,10 @@ void FSServer::process_command(std::string& command)
                 "2. HELP: Displays this help information\n"
                 "3. MYIP: Displays the IP address of this process\n"
                 "4. MYPORT: Displays the port on which this process is listening for incoming connections\n");
+    }
+    else if (command == "myip")
+    {
+        printf("IP address:%s\n", local_ip.c_str());
     }
     else if (command == "myport")
     {
