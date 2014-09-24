@@ -19,9 +19,11 @@ class FSServer
 
     int max_fd;                         // maximum of all fds
 
+    int listen_fd;                      // fd on which we accept connections
+
     public:
     FSServer(int port);
-    ~FSServer(){};
+    ~FSServer();
 
     // functions
     void start(void);
@@ -30,5 +32,9 @@ class FSServer
     void remove_readfd(int fd);
     void insert_writefd(int fd);
     void remove_writefd(int fd);
+
+    // private functions
+    private:
+    void do_bind(void);
 };
 #endif /* _FSSERVER_H_ */
