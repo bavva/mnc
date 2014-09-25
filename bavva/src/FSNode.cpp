@@ -184,15 +184,21 @@ void FSNode::start(void)
     std::string args[3];
     char space[] = " ";
 
+    fd_set temp_read_fds;
+    fd_set temp_write_fds;
+
     insert_readfd(STDIN_FILENO);
     insert_readfd(listen_fd);
 
     while(1)
     {
-        if (select(max_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0)
+        temp_read_fds = read_fds;
+        temp_write_fds = write_fds;
+
+        if (select(max_fd + 1, &temp_read_fds, &temp_write_fds, NULL, NULL) < 0)
             break;
 
-        if (FD_ISSET(listen_fd, &read_fds))
+        if (FD_ISSET(listen_fd, &temp_read_fds))
         {
             struct sockaddr_in peer_address;
             socklen_t peer_addresslen = sizeof(peer_address);
@@ -206,7 +212,7 @@ void FSNode::start(void)
             }
         }
 
-        if (FD_ISSET(STDIN_FILENO, &read_fds))
+        if (FD_ISSET(STDIN_FILENO, &temp_read_fds))
         {
             if ((nbytes = read(STDIN_FILENO, command_buffer + write_here, 
                             COMMAND_BUFFER - write_here)) <= 0)

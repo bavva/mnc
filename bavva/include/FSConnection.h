@@ -9,7 +9,7 @@
 
 class FSConnection
 {
-    private:
+    public:
     bool with_server;                   // is this connection with server
 
     std::string peer_ip;                // ip address of the peer
@@ -17,7 +17,6 @@ class FSConnection
 
     int sock_fd;                        // socket for this connection
 
-    public:
     FSConnection(bool with_server, std::string ip, int port);
     FSConnection(bool with_server, std::string ip, int port, int fd);
     ~FSConnection();
