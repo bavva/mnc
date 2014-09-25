@@ -33,7 +33,7 @@ class FSNode
     // functions
     void start(void);
     void do_bind(void);
-    virtual void process_command(std::string& command);
+    virtual void process_command(std::string args[]);
     void update_localip(void);
     void update_maxfd(void);
     void insert_readfd(int fd);

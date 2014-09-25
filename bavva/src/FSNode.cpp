@@ -167,7 +167,7 @@ void FSNode::do_bind(void)
     }
 }
 
-void FSNode::process_command(std::string& command)
+void FSNode::process_command(std::string args[])
 {
     std::cout << "FSNode does not process any commands\n";
 }
@@ -175,7 +175,8 @@ void FSNode::process_command(std::string& command)
 void FSNode::start(void)
 {
     int nbytes;
-    std::string command;
+    std::string args[3];
+    char space[] = " ";
 
     insert_readfd(STDIN_FILENO);
     insert_readfd(listen_fd);
@@ -202,12 +203,25 @@ void FSNode::start(void)
 
             if (command_buffer[write_here - 1] == '\n')
             {
-                command.assign(command_buffer, 0, write_here - 1);
-                std::transform(command.begin(), command.end(), command.begin(), tolower);
+                command_buffer[write_here - 1] = '\0';
                 write_here = 0;
 
-                process_command(command);
-                command.clear();
+                char *token = strtok(command_buffer, space);
+                for (int i = 0; i < 3; i++)
+                {
+                    if (token == NULL)
+                        break;
+
+                    args[i] = token;
+                    token = strtok(NULL, space);
+                }
+
+                std::transform(args[0].begin(), args[0].end(), args[0].begin(), tolower);
+                process_command(args);
+
+                args[0].clear();
+                args[1].clear();
+                args[2].clear();
             }
         }
     }

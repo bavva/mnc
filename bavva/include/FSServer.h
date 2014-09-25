@@ -17,6 +17,6 @@ class FSServer : public FSNode
 
     // private functions
     private:
-    void process_command(std::string& command);
+    void process_command(std::string args[]);
 };
 #endif /* _FSSERVER_H_ */
