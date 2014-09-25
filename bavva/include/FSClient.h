@@ -17,6 +17,7 @@ class FSClient : public FSNode
 
     // private functions
     private:
+    void register_self(std::string server_ip, int server_port);
     void process_command(std::string args[]);
 };
 #endif /* _FSCLINET_H_ */

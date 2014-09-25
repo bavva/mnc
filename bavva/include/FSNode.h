@@ -5,7 +5,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <vector>
+#include <list>
+
+#include "FSConnection.h"
 #include "global.h"
 
 class FSNode
@@ -13,8 +15,8 @@ class FSNode
     protected:
     int port;                           // port on which we are listening
 
-    std::vector<int> read_sockets;      // copy of read_fds
-    std::vector<int> write_sockets;     // copy of write_fds
+    std::list<int> read_sockets;        // copy of read_fds
+    std::list<int> write_sockets;       // copy of write_fds
     fd_set read_fds;                    // monitor these for reading
     fd_set write_fds;                   // monitor these for writing
 
@@ -25,6 +27,8 @@ class FSNode
     int write_here;                     // write from command_buffer + write_here
 
     std::string local_ip;               // IP address of current process
+
+    std::list<FSConnection*> connections;      // all established connections
 
     public:
     FSNode(int port);

@@ -3,13 +3,24 @@
 #include <cstdio>
 #include <unistd.h>
 #include <cstring>
-#include <algorithm>
 
 #include "../include/FSClient.h"
 
 // class implementation
 FSClient::FSClient(int port):FSNode(port){}
 FSClient::~FSClient(){}
+
+void FSClient::register_self(std::string server_ip, int server_port)
+{
+    if (connections.size() > 0)
+    {
+        printf("Already connected to different server\n");
+        return;
+    }
+
+    FSConnection *connection = new FSConnection(true, server_ip.c_str(), server_port);
+    connections.push_back(connection);
+}
 
 void FSClient::process_command(std::string args[])
 {
@@ -33,6 +44,10 @@ void FSClient::process_command(std::string args[])
     else if (args[0] == "myport")
     {
         printf("Port number:%d\n", port);
+    }
+    else if (args[0] == "register")
+    {
+        register_self(args[1], atoi(args[2].c_str()));
     }
     else
     {

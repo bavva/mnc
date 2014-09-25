@@ -70,13 +70,13 @@ void FSNode::update_maxfd(void)
 {
     unsigned max = 0;
 
-    for (std::vector<int>::iterator it = read_sockets.begin(); it != read_sockets.end(); it++)
+    for (std::list<int>::iterator it = read_sockets.begin(); it != read_sockets.end(); it++)
     {
         if (*it > max)
             max = *it;
     }
 
-    for (std::vector<int>::iterator it = write_sockets.begin(); it != write_sockets.end(); it++)
+    for (std::list<int>::iterator it = write_sockets.begin(); it != write_sockets.end(); it++)
     {
         if (*it > max)
             max = *it;
@@ -105,7 +105,7 @@ void FSNode::insert_writefd(int fd)
 
 void FSNode::remove_readfd(int fd)
 {
-    for (std::vector<int>::iterator it = read_sockets.begin(); it != read_sockets.end(); it++)
+    for (std::list<int>::iterator it = read_sockets.begin(); it != read_sockets.end(); it++)
     {
         if (*it == fd)
         {
@@ -122,7 +122,7 @@ void FSNode::remove_readfd(int fd)
 
 void FSNode::remove_writefd(int fd)
 {
-    for (std::vector<int>::iterator it = write_sockets.begin(); it != write_sockets.end(); it++)
+    for (std::list<int>::iterator it = write_sockets.begin(); it != write_sockets.end(); it++)
     {
         if (*it == fd)
         {
