@@ -28,6 +28,10 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port):with_serv
     }
 }
 
+FSConnection::FSConnection(bool with_server, std::string ip, int port, int fd):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd)
+{
+}
+
 FSConnection::~FSConnection()
 {
     if (sock_fd >= 0)

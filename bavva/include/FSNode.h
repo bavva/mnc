@@ -38,6 +38,7 @@ class FSNode
     void start(void);
     void do_bind(void);
     virtual void process_command(std::string args[]);
+    virtual void process_newconnection(FSConnection *connection);
     void update_localip(void);
     void update_maxfd(void);
     void insert_readfd(int fd);

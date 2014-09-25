@@ -22,6 +22,14 @@ void FSClient::register_self(std::string server_ip, int server_port)
     connections.push_back(connection);
 }
 
+void FSClient::process_newconnection(FSConnection *connection)
+{
+    if (connections.size() >= 4) // don't accept new connections
+        delete connection;
+
+    connections.push_back(connection);
+}
+
 void FSClient::process_command(std::string args[])
 {
     if (args[0] == "creator")

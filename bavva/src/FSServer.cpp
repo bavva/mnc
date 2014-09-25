@@ -11,6 +11,11 @@
 FSServer::FSServer(int port):FSNode(port){}
 FSServer::~FSServer(){}
 
+void FSServer::process_newconnection(FSConnection *connection)
+{
+    connections.push_back(connection);
+}
+
 void FSServer::process_command(std::string args[])
 {
     if (args[0] == "creator")

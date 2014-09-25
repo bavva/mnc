@@ -19,6 +19,7 @@ class FSConnection
 
     public:
     FSConnection(bool with_server, std::string ip, int port);
+    FSConnection(bool with_server, std::string ip, int port, int fd);
     ~FSConnection();
 };
 #endif /* _FSCONNECTION_H_ */

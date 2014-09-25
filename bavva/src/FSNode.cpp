@@ -172,6 +172,12 @@ void FSNode::process_command(std::string args[])
     std::cout << "FSNode does not process any commands\n";
 }
 
+void FSNode::process_newconnection(FSConnection *connection)
+{
+    std::cout << "FSNode does not process any connections\n";
+    delete connection;
+}
+
 void FSNode::start(void)
 {
     int nbytes;
@@ -185,6 +191,20 @@ void FSNode::start(void)
     {
         if (select(max_fd + 1, &read_fds, &write_fds, NULL, NULL) < 0)
             break;
+
+        if (FD_ISSET(listen_fd, &read_fds))
+        {
+            struct sockaddr_in peer_address;
+            socklen_t peer_addresslen = sizeof(peer_address);
+
+            int peer_fd = accept(listen_fd, (struct sockaddr *) &peer_address, &peer_addresslen);
+            if (peer_fd >= 0)
+            {
+                char peer_name[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, &peer_address.sin_addr.s_addr, peer_name, sizeof(peer_name));
+                process_newconnection(new FSConnection(false, peer_name, ntohs(peer_address.sin_port), peer_fd));
+            }
+        }
 
         if (FD_ISSET(STDIN_FILENO, &read_fds))
         {
