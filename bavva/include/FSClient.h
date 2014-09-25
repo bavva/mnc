@@ -1,15 +1,22 @@
-#ifndef _FSCLIENT_H_
-#define _FSCLIENT_H_
-class FSClient
+#ifndef _FSCLINET_H_
+#define _FSCLINET_H_
+// includes
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <vector>
+
+#include "global.h"
+#include "FSNode.h"
+
+class FSClient : public FSNode
 {
-    private:
-    int port;
-
     public:
-    FSClient(int port):port(port){};
-    ~FSClient(){};
+    FSClient(int port);
+    ~FSClient();
 
-    // functions
-    void start(void);
+    // private functions
+    private:
+    void process_command(std::string& command);
 };
-#endif /* _FSCLIENT_H_ */
+#endif /* _FSCLINET_H_ */

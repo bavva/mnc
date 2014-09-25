@@ -64,11 +64,13 @@ int main(int argc, char **argv)
     {
         FSServer *server = new FSServer(appPort);
         server->start();
+        delete server;
     }
     else
     {
         FSClient *client = new FSClient(appPort);
         client->start();
+        delete client;
     }
 
     return 0;
