@@ -11,14 +11,14 @@
 FSServer::FSServer(int port):FSNode(port){}
 FSServer::~FSServer(){}
 
-void FSServer::bcast_connections_list(void)
+void FSServer::bcast_serverip_list(void)
 {
 }
 
 void FSServer::process_newconnection(FSConnection *connection)
 {
     connections.push_back(connection);
-    bcast_connections_list();
+    bcast_serverip_list();
 }
 
 void FSServer::process_command(std::string args[])

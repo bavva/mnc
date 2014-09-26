@@ -3,13 +3,34 @@
 
 #define HOSTNAME_LEN 128
 #define MAX_PARALLEL_DOWNLOAD 3
-#define COMMAND_BUFFER 128
+#define METADATA_SIZE 1024
+#define COMMAND_BUFFER 1024
+
+#include <string>
+
+typedef enum
+{
+    MSG_TYPE_REGISTER_REQUEST,
+    MSG_TYPE_REGISTER_RESPONSE,
+    MSG_MAX
+}FSMessageType;
 
 typedef struct fs_header
 {
-    int message_type;
+    FSMessageType message_type;
     int item_count;
-    char metadata[1024];
+    char metadata[METADATA_SIZE];
 }FSHeader;
+
+class ServerIP
+{
+    public:
+    std::string server_ip;
+    std::string server_name;
+    int port;
+
+    ServerIP(std::string server_ip, std::string server_name, int port):server_ip(server_ip), server_name(server_name), port(port){}
+    ~ServerIP(){}
+};
 
 #endif

@@ -4,13 +4,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <vector>
+#include <list>
 
 #include "global.h"
 #include "FSNode.h"
 
 class FSServer : public FSNode
 {
+    private:
+    std::list<ServerIP> serverIPList;
+
     public:
     FSServer(int port);
     ~FSServer();
@@ -19,6 +22,6 @@ class FSServer : public FSNode
     private:
     void process_command(std::string args[]);
     void process_newconnection(FSConnection *connection);
-    void bcast_connections_list(void);
+    void bcast_serverip_list(void);
 };
 #endif /* _FSSERVER_H_ */

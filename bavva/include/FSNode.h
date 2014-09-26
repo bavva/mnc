@@ -14,6 +14,7 @@ class FSNode
 {
     protected:
     int port;                           // port on which we are listening
+    std::string local_ip;               // IP address of current process
 
     std::list<int> read_sockets;        // copy of read_fds
     std::list<int> write_sockets;       // copy of write_fds
@@ -25,8 +26,6 @@ class FSNode
 
     char command_buffer[COMMAND_BUFFER];    // buffer to keep command data until completely entered
     int write_here;                     // write from command_buffer + write_here
-
-    std::string local_ip;               // IP address of current process
 
     std::list<FSConnection*> connections;      // all established connections
 

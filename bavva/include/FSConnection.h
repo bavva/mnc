@@ -30,6 +30,9 @@ class FSConnection
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
     ~FSConnection();
 
+    void start_reading(void);
+    void start_writing(void);
+
     void on_ready_toread(void);
     void on_ready_towrite(void);
 };

@@ -12,6 +12,10 @@ FSClient::~FSClient(){}
 
 void FSClient::register_self(std::string server_ip, int server_port)
 {
+    int nchars;
+    char buffer[METADATA_SIZE];
+    char *writer = NULL;
+
     if (connections.size() > 0)
     {
         printf("Already connected to different server\n");
@@ -20,6 +24,25 @@ void FSClient::register_self(std::string server_ip, int server_port)
 
     FSConnection *connection = new FSConnection(true, server_ip.c_str(), server_port, (FSNode *)this);
     connections.push_back(connection);
+
+    // clean the buffer
+    writer = buffer;
+    memset(writer, 0, METADATA_SIZE);
+
+    // copy ip address
+    nchars = local_ip.length();
+    strncpy(writer, local_ip.c_str(), nchars);
+    writer += nchars;
+
+    // add comma
+    strncpy(writer, ",", 1);
+    writer += 1;
+
+    // copy port
+    nchars = sprintf(writer, "%d", port);
+    writer += nchars;
+
+    //connection->send_message(MSG_TYPE_REGISTER_REQUEST, 0, buffer);
 }
 
 void FSClient::process_newconnection(FSConnection *connection)

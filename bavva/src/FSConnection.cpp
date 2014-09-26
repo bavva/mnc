@@ -56,6 +56,28 @@ FSConnection::~FSConnection()
     }
 }
 
+void FSConnection::start_reading(void)
+{
+    if (is_reading)
+        return; // we are ready to read
+
+    fsnode->remove_writefd(sock_fd);
+    fsnode->insert_readfd(sock_fd);
+
+    is_reading = true;
+}
+
+void FSConnection::start_writing(void)
+{
+    if (is_reading == false)
+        return; // we are ready to write
+
+    fsnode->remove_readfd(sock_fd);
+    fsnode->insert_writefd(sock_fd);
+
+    is_reading = false;
+}
+
 void FSConnection::on_ready_toread(void)
 {
 }
