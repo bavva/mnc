@@ -10,6 +10,17 @@
 
 class FSNode;
 
+typedef enum
+{
+    CS_WAITINGTO_READ,
+    CS_READING_HEADER,
+    CS_READING_DATA,
+    CS_WAITINGTO_WRITE,
+    CS_WRITING_HEADER,
+    CS_WRITING_BODY,
+    CS_ERROR
+}ConnState;
+
 class FSConnection
 {
     public:
@@ -19,12 +30,11 @@ class FSConnection
     int peer_port;                      // port of the peer
 
     int sock_fd;                        // socket for this connection
-
     bool is_reading;                    // currently are we reading or writing to socket
-
     FSNode *fsnode;                     // our FSServer or FSClient object
-
     FSHeader header;                    // buffer to send or recreate headers
+
+    ConnState state;                    // to run the state machine
 
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
