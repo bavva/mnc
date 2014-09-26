@@ -11,9 +11,6 @@
 
 class FSServer : public FSNode
 {
-    private:
-    std::list<ServerIP> serverIPList;
-
     public:
     FSServer(int port);
     ~FSServer();

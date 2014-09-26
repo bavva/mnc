@@ -80,7 +80,6 @@ void FSConnection::send_message(FSMessageType msg_type, int content_length, char
     header.message_type = msg_type;
     header.content_length = content_length;
     memcpy(header.metadata, buffer, METADATA_SIZE);
-    header_bytesleft = sizeof(header);
 
     // start state machine and return to select
     state = CS_WAITINGTO_WRITE;
@@ -111,6 +110,47 @@ void FSConnection::start_writing(void)
 
 void FSConnection::on_ready_toread(void)
 {
+    int nbytes;
+
+    if (state == CS_WAITINGTO_READ)
+    {
+        header_bytesleft = sizeof(header);
+        state = CS_READING_HEADER;
+    }
+
+    if (state == CS_READING_HEADER)
+    {
+        nbytes = recv(sock_fd, &header, header_bytesleft, 0);
+        if (nbytes <= 0)
+        {
+            link_broken = true;
+            return;
+        }
+        header_bytesleft -= nbytes;
+
+        if (header_bytesleft == 0)
+        {
+            // these are messages with out bodies
+            if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE)
+            {
+                // process the received message
+                std::cout << header.metadata << std::endl;
+
+                state = CS_WAITINGTO_READ;
+                start_reading();
+            }
+            else
+            {
+                // also set body size etc based on header
+                state = CS_READING_DATA;
+            }
+        }
+    }
+
+    if (state == CS_READING_DATA)
+    {
+        // read body and reduce remaining amount
+    }
 }
 
 void FSConnection::on_ready_towrite(void)
@@ -119,11 +159,38 @@ void FSConnection::on_ready_towrite(void)
 
     if (state == CS_WAITINGTO_WRITE)
     {
+        header_bytesleft = sizeof(header);
+        state = CS_WRITING_HEADER;
     }
-    else if (state == CS_WRITING_HEADER)
+
+    if (state == CS_WRITING_HEADER)
     {
+        nbytes = send(sock_fd, &header, header_bytesleft, 0);
+        if (nbytes <= 0)
+        {
+            link_broken = true;
+            return;
+        }
+        header_bytesleft -= nbytes;
+
+        if (header_bytesleft == 0)
+        {
+            // these are messages with out bodies
+            if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE)
+            {
+                state = CS_WAITINGTO_READ;
+                start_reading();
+            }
+            else
+            {
+                // also set body size etc based on header
+                state = CS_WRITING_DATA;
+            }
+        }
     }
-    else if (state == CS_WRITING_BODY)
+
+    if (state == CS_WRITING_DATA)
     {
+        // write body and reduce reamining amount
     }
 }

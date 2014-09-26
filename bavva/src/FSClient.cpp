@@ -48,7 +48,20 @@ void FSClient::register_self(std::string server_ip, int server_port)
 void FSClient::process_newconnection(FSConnection *connection)
 {
     if (connections.size() >= 4) // don't accept new connections
+    {
         delete connection;
+        return;
+    }
+
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); it++)
+    {
+        // only one connection per ip
+        if (connection->peer_ip == (*it)->peer_ip)
+        {
+            delete connection;
+            return;
+        }
+    }
 
     connections.push_back(connection);
 }

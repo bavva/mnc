@@ -28,6 +28,7 @@ class FSNode
     int write_here;                     // write from command_buffer + write_here
 
     std::list<FSConnection*> connections;      // all established connections
+    std::list<ServerIP> serverIPList;   // server ip list
 
     public:
     FSNode(int port);

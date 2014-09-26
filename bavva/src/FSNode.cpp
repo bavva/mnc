@@ -228,7 +228,7 @@ void FSNode::start(void)
             }
         }
 
-        for (std::list<FSConnection*>::const_iterator it = connections.begin(); it != connections.end(); it++)
+        for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); it++)
         {
             if ((*it)->is_reading)
             {

@@ -17,7 +17,7 @@ typedef enum
     CS_READING_DATA,
     CS_WAITINGTO_WRITE,
     CS_WRITING_HEADER,
-    CS_WRITING_BODY,
+    CS_WRITING_DATA,
     CS_ERROR
 }ConnState;
 
