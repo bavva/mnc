@@ -34,12 +34,17 @@ class FSConnection
     FSNode *fsnode;                     // our FSServer or FSClient object
     FSHeader header;                    // buffer to send or recreate headers
 
+    int header_bytesleft;               // bytes left to read/write header
+    int body_bytesleft;                 // bytes left to read/write body
+
     ConnState state;                    // to run the state machine
+    bool link_broken;                   // if this flas is set, this connection will be closed soon
 
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
     ~FSConnection();
 
+    bool is_broken(void);
     void start_reading(void);
     void start_writing(void);
 

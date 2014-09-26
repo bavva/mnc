@@ -11,6 +11,7 @@
 // class implementation
 FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode):with_server(with_server), peer_ip(ip), peer_port(port), fsnode(fsnode)
 {
+    link_broken = false;
     is_reading = true;
 
     sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -40,6 +41,7 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     assert(fd >= 0);
     assert(fsnode != NULL);
 
+    link_broken = false;
     is_reading = true;
     fsnode->insert_readfd(sock_fd);
 }
@@ -56,14 +58,32 @@ FSConnection::~FSConnection()
     }
 }
 
+bool FSConnection::is_broken(void)
+{
+    return link_broken;
+}
+
 void FSConnection::send_message(FSMessageType msg_type, int content_length, char *buffer)
 {
+    if (link_broken)
+    {
+        printf("Can't send. This link is broken\n");
+    }
+
+    if (state != CS_WAITINGTO_READ)
+    {
+        printf("One message at a time. Try later\n");
+        return;
+    }
+
+    // copy to local buffer
     header.message_type = msg_type;
     header.content_length = content_length;
     memcpy(header.metadata, buffer, METADATA_SIZE);
+    header_bytesleft = sizeof(header);
 
-    state = CS_WAITINGTO_READ;
-
+    // start state machine and return to select
+    state = CS_WAITINGTO_WRITE;
     start_writing();
 }
 
@@ -95,4 +115,15 @@ void FSConnection::on_ready_toread(void)
 
 void FSConnection::on_ready_towrite(void)
 {
+    int nbytes;
+
+    if (state == CS_WAITINGTO_WRITE)
+    {
+    }
+    else if (state == CS_WRITING_HEADER)
+    {
+    }
+    else if (state == CS_WRITING_BODY)
+    {
+    }
 }

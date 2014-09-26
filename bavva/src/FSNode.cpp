@@ -30,7 +30,10 @@ FSNode::~FSNode()
     close(listen_fd);
 
     while(!connections.empty())
+    {
+        delete connections.front();
         connections.pop_front();
+    }
 }
 
 void FSNode::update_localip(void)
@@ -195,6 +198,16 @@ void FSNode::start(void)
 
     while(1)
     {
+        // clear broken links
+        for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); it++)
+        {
+            if ((*it)->is_broken())
+            {
+                delete (*it);
+                connections.erase(it);
+            }
+        }
+
         temp_read_fds = read_fds;
         temp_write_fds = write_fds;
 
