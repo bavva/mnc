@@ -5,7 +5,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
 #include "global.h"
+
+class FSNode;
 
 class FSConnection
 {
@@ -17,8 +20,12 @@ class FSConnection
 
     int sock_fd;                        // socket for this connection
 
-    FSConnection(bool with_server, std::string ip, int port);
-    FSConnection(bool with_server, std::string ip, int port, int fd);
+    bool is_reading;                    // currently are we reading or writing to socket
+
+    FSNode *fsnode;                     // our FSServer or FSClient object
+
+    FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode);
+    FSConnection(bool with_server, std::string ip, int port, int fd, FSNode *fsnode);
     ~FSConnection();
 };
 #endif /* _FSCONNECTION_H_ */

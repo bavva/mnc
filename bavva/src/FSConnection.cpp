@@ -3,12 +3,16 @@
 #include <cstdio>
 #include <unistd.h>
 #include <cstring>
+#include <assert.h>
 
 #include "../include/FSConnection.h"
+#include "../include/FSNode.h"
 
 // class implementation
-FSConnection::FSConnection(bool with_server, std::string ip, int port):with_server(with_server), peer_ip(ip), peer_port(port)
+FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode):with_server(with_server), peer_ip(ip), peer_port(port), fsnode(fsnode)
 {
+    is_reading = true;
+
     sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(sock_fd < 0)
         return;
@@ -25,15 +29,29 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port):with_serv
     if(connect(sock_fd, (struct sockaddr *)&peer_address, sizeof(peer_address)) < 0)
     {
         std::cout << "Failed to connect to " << ip << " and port " << port << std::endl;
+        return;
     }
+
+    fsnode->insert_readfd(sock_fd);
 }
 
-FSConnection::FSConnection(bool with_server, std::string ip, int port, int fd):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd)
+FSConnection::FSConnection(bool with_server, std::string ip, int port, int fd, FSNode *fsnode):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd), fsnode(fsnode)
 {
+    assert(fd >= 0);
+    assert(fsnode != NULL);
+
+    is_reading = true;
+    fsnode->insert_readfd(sock_fd);
 }
 
 FSConnection::~FSConnection()
 {
     if (sock_fd >= 0)
+    {
+        if (is_reading)
+            fsnode->remove_readfd(sock_fd);
+        else
+            fsnode->remove_writefd(sock_fd);
         close(sock_fd);
+    }
 }

@@ -18,7 +18,7 @@ void FSClient::register_self(std::string server_ip, int server_port)
         return;
     }
 
-    FSConnection *connection = new FSConnection(true, server_ip.c_str(), server_port);
+    FSConnection *connection = new FSConnection(true, server_ip.c_str(), server_port, (FSNode *)this);
     connections.push_back(connection);
 }
 
