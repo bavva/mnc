@@ -5,4 +5,11 @@
 #define MAX_PARALLEL_DOWNLOAD 3
 #define COMMAND_BUFFER 128
 
+typedef struct fs_header
+{
+    int message_type;
+    int item_count;
+    char metadata[1024];
+}FSHeader;
+
 #endif

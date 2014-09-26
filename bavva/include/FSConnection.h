@@ -24,8 +24,10 @@ class FSConnection
 
     FSNode *fsnode;                     // our FSServer or FSClient object
 
+    FSHeader header;                    // buffer to send or recreate headers
+
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode);
-    FSConnection(bool with_server, std::string ip, int port, int fd, FSNode *fsnode);
+    FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
     ~FSConnection();
 
     void on_ready_toread(void);

@@ -211,7 +211,7 @@ void FSNode::start(void)
             {
                 char peer_name[INET_ADDRSTRLEN];
                 inet_ntop(AF_INET, &peer_address.sin_addr.s_addr, peer_name, sizeof(peer_name));
-                process_newconnection(new FSConnection(false, peer_name, ntohs(peer_address.sin_port), peer_fd, this));
+                process_newconnection(new FSConnection(false, peer_name, ntohs(peer_address.sin_port), this, peer_fd));
             }
         }
 

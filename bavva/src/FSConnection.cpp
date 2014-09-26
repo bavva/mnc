@@ -35,7 +35,7 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     fsnode->insert_readfd(sock_fd);
 }
 
-FSConnection::FSConnection(bool with_server, std::string ip, int port, int fd, FSNode *fsnode):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd), fsnode(fsnode)
+FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd), fsnode(fsnode)
 {
     assert(fd >= 0);
     assert(fsnode != NULL);
