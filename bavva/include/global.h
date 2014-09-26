@@ -18,7 +18,7 @@ typedef enum
 typedef struct fs_header
 {
     FSMessageType message_type;
-    int item_count;
+    int content_length;
     char metadata[METADATA_SIZE];
 }FSHeader;
 
