@@ -215,6 +215,20 @@ void FSNode::start(void)
             }
         }
 
+        for (std::list<FSConnection*>::const_iterator it = connections.begin(); it != connections.end(); it++)
+        {
+            if ((*it)->is_reading)
+            {
+                if (FD_ISSET((*it)->sock_fd, &temp_read_fds))
+                    (*it)->on_ready_toread();
+            }
+            else
+            {
+                if (FD_ISSET((*it)->sock_fd, &temp_write_fds))
+                    (*it)->on_ready_towrite();
+            }
+        }
+
         if (FD_ISSET(STDIN_FILENO, &temp_read_fds))
         {
             if ((nbytes = read(STDIN_FILENO, command_buffer + write_here, 

@@ -55,3 +55,11 @@ FSConnection::~FSConnection()
         close(sock_fd);
     }
 }
+
+void FSConnection::on_ready_toread(void)
+{
+}
+
+void FSConnection::on_ready_towrite(void)
+{
+}

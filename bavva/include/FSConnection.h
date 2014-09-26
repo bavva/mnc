@@ -27,5 +27,8 @@ class FSConnection
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, int fd, FSNode *fsnode);
     ~FSConnection();
+
+    void on_ready_toread(void);
+    void on_ready_towrite(void);
 };
 #endif /* _FSCONNECTION_H_ */
