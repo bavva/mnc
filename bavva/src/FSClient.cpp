@@ -42,7 +42,7 @@ void FSClient::register_self(std::string server_ip, int server_port)
     nchars = sprintf(writer, "%d", port);
     writer += nchars;
 
-    //connection->send_message(MSG_TYPE_REGISTER_REQUEST, 0, buffer);
+    connection->send_message(MSG_TYPE_REGISTER_REQUEST, 0, buffer);
 }
 
 void FSClient::process_newconnection(FSConnection *connection)

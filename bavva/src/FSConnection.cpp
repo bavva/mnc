@@ -56,6 +56,17 @@ FSConnection::~FSConnection()
     }
 }
 
+void FSConnection::send_message(FSMessageType msg_type, int content_length, char *buffer)
+{
+    header.message_type = msg_type;
+    header.content_length = content_length;
+    memcpy(header.metadata, buffer, METADATA_SIZE);
+
+    state = CS_WAITINGTO_READ;
+
+    start_writing();
+}
+
 void FSConnection::start_reading(void)
 {
     if (is_reading)

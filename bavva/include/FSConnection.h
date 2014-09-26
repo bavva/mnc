@@ -45,5 +45,7 @@ class FSConnection
 
     void on_ready_toread(void);
     void on_ready_towrite(void);
+
+    void send_message(FSMessageType msg_type, int content_length, char *buffer);
 };
 #endif /* _FSCONNECTION_H_ */
