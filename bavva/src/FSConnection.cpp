@@ -110,20 +110,13 @@ void FSConnection::start_writing(void)
 
 void FSConnection::process_received_message(void)
 {
-    char *hostname, *ipaddress, *portstring;
-
     switch(header.message_type)
     {
         case MSG_TYPE_REGISTER_REQUEST:
-            hostname = strtok(header.metadata, ",");
-            ipaddress = strtok(NULL, ",");
-            portstring = strtok(NULL, ",");
-
-            fsnode->add_serverip(new ServerIP(ipaddress, hostname, atoi(portstring)));
-            fsnode->set_bcast_serverip_list_flag();
+            fsnode->process_register_request(&header);
             break;
         case MSG_TYPE_REGISTER_RESPONSE:
-            std::cout << header.metadata << std::endl;
+            fsnode->process_register_response(&header);
             break;
         default:
             break;

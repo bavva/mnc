@@ -37,10 +37,13 @@ class FSNode
     ~FSNode();
 
     // functions
-    void start(void);
-    void do_bind(void);
+    virtual void process_register_request(FSHeader *header);
+    virtual void process_register_response(FSHeader *header);
     virtual void process_command(std::string args[]);
     virtual void process_newconnection(FSConnection *connection);
+
+    void start(void);
+    void do_bind(void);
     void bcast_serverip_list(void);
     void update_localip(void);
     void update_maxfd(void);
@@ -50,5 +53,6 @@ class FSNode
     void remove_writefd(int fd);
     void add_serverip(ServerIP *sip);
     void set_bcast_serverip_list_flag(void);
+    void print_server_ip_list(void);
 };
 #endif /* _FSNODE_H_ */

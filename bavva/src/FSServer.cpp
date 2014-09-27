@@ -16,6 +16,21 @@ void FSServer::process_newconnection(FSConnection *connection)
     connections.push_back(connection);
 }
 
+void FSServer::process_register_request(FSHeader *header)
+{
+    char *hostname, *ipaddress, *portstring;
+
+    if (header == NULL)
+        return;
+
+    hostname = strtok(header->metadata, ",");
+    ipaddress = strtok(NULL, ",");
+    portstring = strtok(NULL, ",");
+
+    add_serverip(new ServerIP(ipaddress, hostname, atoi(portstring)));
+    bcast_serverip_list_flag = true;
+}
+
 void FSServer::process_command(std::string args[])
 {
     if (args[0] == "creator")

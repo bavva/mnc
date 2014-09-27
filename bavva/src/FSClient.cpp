@@ -78,6 +78,72 @@ void FSClient::process_newconnection(FSConnection *connection)
     connections.push_back(connection);
 }
 
+void FSClient::process_register_response(FSHeader *header)
+{
+    char *hostname, *ipaddress, *portstring;
+
+    if (header == NULL)
+        return;
+
+    // empty server ip list
+    while(!server_ip_list.empty())
+    {
+        delete server_ip_list.front();
+        server_ip_list.pop_front();
+    }
+
+    if (header->content_length < 1)
+        return;
+
+    // add all received to server ip list
+    hostname = strtok(header->metadata, ",");
+    ipaddress = strtok(NULL, ",");
+    portstring = strtok(NULL, ",");
+    add_serverip(new ServerIP(ipaddress, hostname, atoi(portstring)));
+
+    for (int i = 0; i < header->content_length - 1; i++)
+    {
+        hostname = strtok(NULL, ",");
+        ipaddress = strtok(NULL, ",");
+        portstring = strtok(NULL, ",");
+        add_serverip(new ServerIP(ipaddress, hostname, atoi(portstring)));
+    }
+
+    // remove any connections to host which is not there in server ip list
+    std::list<FSConnection*>::iterator it = connections.begin();
+    if (it == connections.end())
+        return;
+    else
+        it++;
+
+    bool ip_found;
+    for (;it != connections.end();)
+    {
+        ip_found == false;
+        for (std::list<ServerIP*>::iterator ite = server_ip_list.begin(); ite != server_ip_list.end(); ++ite)
+        {
+            if ((*ite)->server_ip == (*it)->peer_ip)
+            {
+                ip_found = true;
+                break;
+            }
+        }
+
+        if (ip_found == false)
+        {
+            delete (*it);
+            it = connections.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    // print new server ip list
+    print_server_ip_list();
+}
+
 void FSClient::process_command(std::string args[])
 {
     if (args[0] == "creator")

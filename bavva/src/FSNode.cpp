@@ -198,9 +198,30 @@ void FSNode::process_newconnection(FSConnection *connection)
     delete connection;
 }
 
+void FSNode::process_register_request(FSHeader *header)
+{
+    std::cout << "REGISTER message is applicable to server only";
+}
+
+void FSNode::process_register_response(FSHeader *header)
+{
+    std::cout << "SERVER_IP_LIST message is applicable to client only";
+}
 void FSNode::set_bcast_serverip_list_flag(void)
 {
     bcast_serverip_list_flag = true;
+}
+
+void FSNode::print_server_ip_list(void)
+{
+    int i = 1;
+
+    printf ("%-5s%-35s%-20s%-8s\n", "ID", "Hostname", "IP Address", "Port No");
+    for (std::list<ServerIP*>::iterator it = server_ip_list.begin(); it != server_ip_list.end(); ++it)
+    {
+        printf ("%-5d%-35s%-20s%-8d\n", i, (*it)->server_name.c_str(), (*it)->server_ip.c_str(), (*it)->port);
+        i++;
+    }
 }
 
 void FSNode::bcast_serverip_list(void)
