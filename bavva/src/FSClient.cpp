@@ -67,6 +67,64 @@ void FSClient::register_self(std::string server_ip, int server_port)
 
 void FSClient::make_connection(std::string peer_address, int peer_port)
 {
+    std::string peer_ip;
+
+    if (connections.size() >= 4) // don't accept new connections
+    {
+        printf ("More than 4 connections (including the one with server) is not allowed\n");
+        return;
+    }
+
+    hostname_to_ip(peer_address, peer_ip);
+    if (peer_ip.empty())
+    {
+        printf ("Invalid address entered\n");
+        return;
+    }
+
+    if (peer_ip == local_ip)
+    {
+        printf ("Self connections are not allowed\n");
+        return;
+    }
+
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    {
+        // only one connection per ip
+        if ((*it)->peer_ip == peer_ip)
+        {
+            printf ("Duplicate connections are not allowed\n");
+            return;
+        }
+    }
+
+    bool ip_found = false;
+    for (std::list<ServerIP*>::iterator it = server_ip_list.begin(); it != server_ip_list.end(); ++it)
+    {
+        // delete connection if the peer is not among server ip list
+        if ((*it)->server_ip == peer_ip)
+        {
+            ip_found = true;
+            break;
+        }
+    }
+
+    if (ip_found == false)
+    {
+        printf ("Can not connect as given address is not among Server-IP-List\n");
+        return;
+    }
+
+    FSConnection *connection = new FSConnection(true, peer_ip.c_str(), peer_port, (FSNode *)this);
+    if (connection->is_broken())
+    {
+        printf ("Unable to establish connection to %s:%d\n", peer_ip.c_str(), peer_port);
+        delete connection;
+        return;
+    }
+
+    printf ("Successfully established connection to %s:%d\n", peer_ip.c_str(), peer_port);
+    connections.push_back(connection);
 }
 
 void FSClient::process_newconnection(FSConnection *connection)

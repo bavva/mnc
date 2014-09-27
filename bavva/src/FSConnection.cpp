@@ -70,7 +70,7 @@ bool FSConnection::is_broken(void)
     return link_broken;
 }
 
-void FSConnection::hostname_to_ip(std::string hostname, std::string &ipaddress)
+void hostname_to_ip(std::string hostname, std::string &ipaddress)
 {
     struct addrinfo hints, *res, *p;
 

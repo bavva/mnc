@@ -22,6 +22,10 @@ typedef enum
     CS_ERROR
 }ConnState;
 
+// generic functions
+void hostname_to_ip(std::string hostname, std::string &ipaddress);
+
+// class definition
 class FSConnection
 {
     public:
@@ -44,8 +48,6 @@ class FSConnection
     FSConnection(bool with_server, std::string hostname, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
     ~FSConnection();
-
-    void hostname_to_ip(std::string hostname, std::string &ipaddress);
 
     bool is_broken(void);
     void start_reading(void);
