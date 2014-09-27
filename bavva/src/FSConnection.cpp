@@ -120,8 +120,10 @@ void FSConnection::process_received_message(void)
             portstring = strtok(NULL, ",");
 
             fsnode->add_serverip(new ServerIP(ipaddress, hostname, atoi(portstring)));
+            fsnode->set_bcast_serverip_list_flag();
             break;
         case MSG_TYPE_REGISTER_RESPONSE:
+            std::cout << header.metadata << std::endl;
             break;
         default:
             break;

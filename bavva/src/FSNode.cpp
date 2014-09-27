@@ -198,8 +198,43 @@ void FSNode::process_newconnection(FSConnection *connection)
     delete connection;
 }
 
+void FSNode::set_bcast_serverip_list_flag(void)
+{
+    bcast_serverip_list_flag = true;
+}
+
 void FSNode::bcast_serverip_list(void)
 {
+    int nchars;
+    char buffer[METADATA_SIZE];
+    char *writer = NULL;
+
+    // clean the buffer
+    writer = buffer;
+    memset(writer, 0, METADATA_SIZE);
+
+    for (std::list<ServerIP*>::iterator it = server_ip_list.begin(); it != server_ip_list.end(); ++it)
+    {
+        strncpy(writer, (*it)->server_name.c_str(), (*it)->server_name.length());
+        writer += (*it)->server_name.length();
+        strncpy(writer, ",", 1);
+        writer += 1;
+
+        strncpy(writer, (*it)->server_ip.c_str(), (*it)->server_ip.length());
+        writer += (*it)->server_ip.length();
+        strncpy(writer, ",", 1);
+        writer += 1;
+
+        nchars = sprintf(writer, "%d", (*it)->port);
+        writer += nchars;
+        strncpy(writer, ",", 1);
+        writer += 1;
+    }
+
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    {
+        (*it)->send_message(MSG_TYPE_REGISTER_RESPONSE, server_ip_list.size(), buffer);
+    }
 }
 
 void FSNode::start(void)
@@ -228,6 +263,12 @@ void FSNode::start(void)
             {
                 ++it;
             }
+        }
+
+        if (bcast_serverip_list_flag)
+        {
+            bcast_serverip_list();
+            bcast_serverip_list_flag = false;
         }
 
         temp_read_fds = read_fds;

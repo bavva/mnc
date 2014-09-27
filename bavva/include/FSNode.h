@@ -30,6 +30,8 @@ class FSNode
     std::list<FSConnection*> connections;      // all established connections
     std::list<ServerIP *> server_ip_list;   // server ip list
 
+    bool bcast_serverip_list_flag;  // flag to indicate we need to broadcast server ip list
+
     public:
     FSNode(int port);
     ~FSNode();
@@ -47,5 +49,6 @@ class FSNode
     void insert_writefd(int fd);
     void remove_writefd(int fd);
     void add_serverip(ServerIP *sip);
+    void set_bcast_serverip_list_flag(void);
 };
 #endif /* _FSNODE_H_ */
