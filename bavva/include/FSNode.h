@@ -21,6 +21,8 @@ class FSNode
     fd_set read_fds;                    // monitor these for reading
     fd_set write_fds;                   // monitor these for writing
 
+    bool is_server;                     // is this node server
+
     int max_fd;                         // maximum of all fds
     int listen_fd;                      // fd on which we accept connections
 
@@ -33,7 +35,7 @@ class FSNode
     bool bcast_serverip_list_flag;  // flag to indicate we need to broadcast server ip list
 
     public:
-    FSNode(int port);
+    FSNode(int port, bool is_server);
     ~FSNode();
 
     // functions

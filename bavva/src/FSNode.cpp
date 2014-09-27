@@ -14,7 +14,7 @@
 static const int MAXPENDING = 5;
 
 // class implementation
-FSNode::FSNode(int port):port(port)
+FSNode::FSNode(int port, bool is_server):port(port), is_server(is_server)
 {
     write_here = 0;
 
@@ -273,10 +273,24 @@ void FSNode::start(void)
     while(1)
     {
         // clear broken links
-        for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); )
+        for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end();)
         {
             if ((*it)->is_broken())
             {
+                if (is_server)
+                {
+                    bcast_serverip_list_flag = true;
+                    for (std::list<ServerIP*>::iterator ite = server_ip_list.begin(); ite != server_ip_list.end(); ++ite)
+                    {
+                        if ((*it)->peer_ip == (*ite)->server_ip)
+                        {
+                            delete (*ite);
+                            server_ip_list.erase(ite);
+                            break;
+                        }
+                    }
+                }
+
                 delete (*it);
                 it = connections.erase(it);
             }

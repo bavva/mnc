@@ -7,7 +7,7 @@
 #include "../include/FSClient.h"
 
 // class implementation
-FSClient::FSClient(int port):FSNode(port){}
+FSClient::FSClient(int port):FSNode(port, false){}
 FSClient::~FSClient(){}
 
 void FSClient::register_self(std::string server_ip, int server_port)

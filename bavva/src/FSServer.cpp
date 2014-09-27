@@ -8,7 +8,7 @@
 #include "../include/FSServer.h"
 
 // class implementation
-FSServer::FSServer(int port):FSNode(port){}
+FSServer::FSServer(int port):FSNode(port, true){}
 FSServer::~FSServer(){}
 
 void FSServer::process_newconnection(FSConnection *connection)
