@@ -200,12 +200,12 @@ void FSNode::process_newconnection(FSConnection *connection)
 
 void FSNode::process_register_request(FSHeader *header)
 {
-    std::cout << "REGISTER message is applicable to server only";
+    std::cout << "A request to REGISTER with us(client) is rejected\n";
 }
 
 void FSNode::process_register_response(FSHeader *header)
 {
-    std::cout << "SERVER_IP_LIST message is applicable to client only";
+    std::cout << "SERVER_IP_LIST message is applicable to client only\n";
 }
 void FSNode::set_bcast_serverip_list_flag(void)
 {
@@ -216,6 +216,7 @@ void FSNode::print_server_ip_list(void)
 {
     int i = 1;
 
+    printf ("\nServer-IP-List update received:\n");
     printf ("%-5s%-35s%-20s%-8s\n", "ID", "Hostname", "IP Address", "Port No");
     for (std::list<ServerIP*>::iterator it = server_ip_list.begin(); it != server_ip_list.end(); ++it)
     {
