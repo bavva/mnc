@@ -11,6 +11,9 @@
 
 class FSClient : public FSNode
 {
+    private:
+    std::string server_ipaddress;
+
     public:
     FSClient(int port);
     ~FSClient();

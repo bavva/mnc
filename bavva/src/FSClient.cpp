@@ -55,12 +55,21 @@ void FSClient::register_self(std::string server_ip, int server_port)
     writer += nchars;
 
     connection->send_message(MSG_TYPE_REGISTER_REQUEST, 0, buffer);
+
+    server_ipaddress = server_ip;
 }
 
 void FSClient::process_newconnection(FSConnection *connection)
 {
     if (connections.size() >= 4) // don't accept new connections
     {
+        delete connection;
+        return;
+    }
+
+    if (connection->peer_ip == local_ip)
+    {
+        printf ("Rejecting self connection\n");
         delete connection;
         return;
     }
@@ -93,6 +102,8 @@ void FSClient::process_newconnection(FSConnection *connection)
         delete connection;
         return;
     }
+
+    printf ("New connection to %s established\n", connection->peer_ip.c_str());
 
     connections.push_back(connection);
 }
