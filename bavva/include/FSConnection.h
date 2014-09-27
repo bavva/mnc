@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include "global.h"
 
@@ -43,6 +44,8 @@ class FSConnection
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
     ~FSConnection();
+
+    void hostname_to_ip(std::string hostname, std::string &ipaddress);
 
     bool is_broken(void);
     void start_reading(void);

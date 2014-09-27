@@ -24,6 +24,12 @@ void FSClient::register_self(std::string server_ip, int server_port)
     }
 
     FSConnection *connection = new FSConnection(true, server_ip.c_str(), server_port, (FSNode *)this);
+    if (connection->is_broken())
+    {
+        delete connection;
+        return;
+    }
+
     connections.push_back(connection);
 
     // clean the buffer
@@ -57,6 +63,10 @@ void FSClient::register_self(std::string server_ip, int server_port)
     connection->send_message(MSG_TYPE_REGISTER_REQUEST, 0, buffer);
 
     server_ipaddress = server_ip;
+}
+
+void FSClient::make_connection(std::string peer_address, int peer_port)
+{
 }
 
 void FSClient::process_newconnection(FSConnection *connection)
@@ -200,6 +210,10 @@ void FSClient::process_command(std::string args[])
     else if (args[0] == "register")
     {
         register_self(args[1], atoi(args[2].c_str()));
+    }
+    else if (args[0] == "connect")
+    {
+        make_connection(args[1], atoi(args[2].c_str()));
     }
     else
     {

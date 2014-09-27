@@ -11,9 +11,7 @@
 // class implementation
 FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode):with_server(with_server), peer_ip(ip), peer_port(port), fsnode(fsnode)
 {
-    link_broken = false;
-    is_reading = true;
-
+    link_broken = true;
     sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(sock_fd < 0)
         return;
@@ -36,6 +34,8 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     fsnode->insert_readfd(sock_fd);
 
     state = CS_WAITINGTO_READ;
+    link_broken = false;
+    is_reading = true;
 }
 
 FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd), fsnode(fsnode)
@@ -43,11 +43,11 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     assert(fd >= 0);
     assert(fsnode != NULL);
 
-    link_broken = false;
-    is_reading = true;
     fsnode->insert_readfd(sock_fd);
 
     state = CS_WAITINGTO_READ;
+    link_broken = false;
+    is_reading = true;
 }
 
 FSConnection::~FSConnection()
@@ -65,6 +65,29 @@ FSConnection::~FSConnection()
 bool FSConnection::is_broken(void)
 {
     return link_broken;
+}
+
+void FSConnection::hostname_to_ip(std::string hostname, std::string &ipaddress)
+{
+    struct addrinfo hints, *res, *p;
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(hostname.c_str(), NULL, &hints, &res) != 0)
+        return;
+
+    for(p = res; p != NULL; p = p->ai_next)
+    {
+        if (p->ai_family == AF_INET)
+        {
+            struct sockaddr_in *sin = (struct sockaddr_in *)p->ai_addr;
+            ipaddress.assign(inet_ntoa(sin->sin_addr));
+        }
+    }
+
+    freeaddrinfo(res);
 }
 
 void FSConnection::send_message(FSMessageType msg_type, int content_length, char *buffer)

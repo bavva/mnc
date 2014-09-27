@@ -58,6 +58,10 @@ void FSServer::process_command(std::string args[])
     {
         printf("REGISTER command is not applicable for server\n");
     }
+    else if (args[0] == "connect")
+    {
+        printf("CONNECT command is not applicable for server\n");
+    }
     else
     {
         std::cout << "Unknown command " << args[0] << " entered\n";
