@@ -53,7 +53,7 @@ void FSClient::process_newconnection(FSConnection *connection)
         return;
     }
 
-    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); it++)
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
     {
         // only one connection per ip
         if (connection->peer_ip == (*it)->peer_ip)
