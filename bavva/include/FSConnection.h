@@ -41,7 +41,7 @@ class FSConnection
     ConnState state;                    // to run the state machine
     bool link_broken;                   // if this flas is set, this connection will be closed soon
 
-    FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode);
+    FSConnection(bool with_server, std::string hostname, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
     ~FSConnection();
 
