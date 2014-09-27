@@ -34,6 +34,8 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     }
 
     fsnode->insert_readfd(sock_fd);
+
+    state = CS_WAITINGTO_READ;
 }
 
 FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd), fsnode(fsnode)
@@ -44,6 +46,8 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     link_broken = false;
     is_reading = true;
     fsnode->insert_readfd(sock_fd);
+
+    state = CS_WAITINGTO_READ;
 }
 
 FSConnection::~FSConnection()

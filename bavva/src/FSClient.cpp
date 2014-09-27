@@ -70,9 +70,28 @@ void FSClient::process_newconnection(FSConnection *connection)
         // only one connection per ip
         if (connection->peer_ip == (*it)->peer_ip)
         {
+            printf ("Rejecting duplicate connection\n");
             delete connection;
             return;
         }
+    }
+
+    bool ip_found = false;
+    for (std::list<ServerIP*>::iterator it = server_ip_list.begin(); it != server_ip_list.end(); ++it)
+    {
+        // delete connection if the peer is not among server ip list
+        if (connection->peer_ip == (*it)->server_ip)
+        {
+            ip_found = true;
+            break;
+        }
+    }
+
+    if (ip_found == false)
+    {
+        printf ("Rejecting connection as it is not among Server-IP-List\n");
+        delete connection;
+        return;
     }
 
     connections.push_back(connection);
