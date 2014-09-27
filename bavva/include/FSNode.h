@@ -28,7 +28,7 @@ class FSNode
     int write_here;                     // write from command_buffer + write_here
 
     std::list<FSConnection*> connections;      // all established connections
-    std::list<ServerIP> serverIPList;   // server ip list
+    std::list<ServerIP *> server_ip_list;   // server ip list
 
     public:
     FSNode(int port);
@@ -39,11 +39,13 @@ class FSNode
     void do_bind(void);
     virtual void process_command(std::string args[]);
     virtual void process_newconnection(FSConnection *connection);
+    void bcast_serverip_list(void);
     void update_localip(void);
     void update_maxfd(void);
     void insert_readfd(int fd);
     void remove_readfd(int fd);
     void insert_writefd(int fd);
     void remove_writefd(int fd);
+    void add_serverip(ServerIP *sip);
 };
 #endif /* _FSNODE_H_ */

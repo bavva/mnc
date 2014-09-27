@@ -19,6 +19,5 @@ class FSServer : public FSNode
     private:
     void process_command(std::string args[]);
     void process_newconnection(FSConnection *connection);
-    void bcast_serverip_list(void);
 };
 #endif /* _FSSERVER_H_ */

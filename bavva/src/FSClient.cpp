@@ -14,6 +14,7 @@ void FSClient::register_self(std::string server_ip, int server_port)
 {
     int nchars;
     char buffer[METADATA_SIZE];
+    char hostname[128];
     char *writer = NULL;
 
     if (connections.size() > 0)
@@ -28,6 +29,17 @@ void FSClient::register_self(std::string server_ip, int server_port)
     // clean the buffer
     writer = buffer;
     memset(writer, 0, METADATA_SIZE);
+
+    // get hostname and copy it
+    memset(hostname, 0, 128);
+    gethostname(hostname, 127);
+    nchars = strlen(hostname);
+    strncpy(writer, hostname, nchars);
+    writer += nchars;
+
+    // add comma
+    strncpy(writer, ",", 1);
+    writer += 1;
 
     // copy ip address
     nchars = local_ip.length();

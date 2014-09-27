@@ -108,6 +108,26 @@ void FSConnection::start_writing(void)
     is_reading = false;
 }
 
+void FSConnection::process_received_message(void)
+{
+    char *hostname, *ipaddress, *portstring;
+
+    switch(header.message_type)
+    {
+        case MSG_TYPE_REGISTER_REQUEST:
+            hostname = strtok(header.metadata, ",");
+            ipaddress = strtok(NULL, ",");
+            portstring = strtok(NULL, ",");
+
+            fsnode->add_serverip(new ServerIP(ipaddress, hostname, atoi(portstring)));
+            break;
+        case MSG_TYPE_REGISTER_RESPONSE:
+            break;
+        default:
+            break;
+    }
+}
+
 void FSConnection::on_ready_toread(void)
 {
     int nbytes;
@@ -130,12 +150,12 @@ void FSConnection::on_ready_toread(void)
 
         if (header_bytesleft == 0)
         {
+            // process the received message
+            process_received_message();
+
             // these are messages with out bodies
             if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE)
             {
-                // process the received message
-                std::cout << header.metadata << std::endl;
-
                 state = CS_WAITINGTO_READ;
                 start_reading();
             }

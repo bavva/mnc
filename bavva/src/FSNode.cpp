@@ -143,6 +143,20 @@ void FSNode::remove_writefd(int fd)
         update_maxfd();
 }
 
+void FSNode::add_serverip(ServerIP *sip)
+{
+    for (std::list<ServerIP *>::iterator it = server_ip_list.begin(); it != server_ip_list.end(); ++it)
+    {
+        if (sip->server_ip == (*it)->server_ip)
+        {
+            delete sip;
+            return;
+        }
+    }
+
+    server_ip_list.push_back(sip);
+}
+
 void FSNode::do_bind(void)
 {
     if((listen_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
@@ -182,6 +196,10 @@ void FSNode::process_newconnection(FSConnection *connection)
 {
     std::cout << "FSNode does not process any connections\n";
     delete connection;
+}
+
+void FSNode::bcast_serverip_list(void)
+{
 }
 
 void FSNode::start(void)
