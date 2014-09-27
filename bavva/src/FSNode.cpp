@@ -292,6 +292,7 @@ void FSNode::start(void)
                     }
                 }
 
+                printf ("Connection with %s is terminated by remote peer\n", (*it)->peer_ip.c_str());
                 delete (*it);
                 it = connections.erase(it);
             }
