@@ -252,7 +252,7 @@ void FSClient::process_register_response(FSHeader *header)
 
 void FSClient::terminate_connection(int connection_id)
 {
-    if (connection_id <= 0)
+    if ((connection_id <= 0) || (connection_id > connections.size()))
     {
         printf("Not a valid connection id\n");
         return;
@@ -285,6 +285,26 @@ void FSClient::terminate_allconnections(void)
     }
 
     request_exit = true;
+}
+
+void FSClient::process_upload(int connection_id, std::string filename)
+{
+    if ((connection_id <= 0) || (connection_id > connections.size()))
+    {
+        printf ("Given connection id is invalid\n");
+        return;
+    }
+    else if (connection_id == 1)
+    {
+        printf ("Uploading file to server is not allowed\n");
+        return;
+    }
+
+    if (access(filename.c_str(), R_OK) != 0)
+    {
+        printf ("File does not exist or it is not readable\n");
+        return;
+    }
 }
 
 void FSClient::process_command(std::string args[])
@@ -329,6 +349,10 @@ void FSClient::process_command(std::string args[])
     else if (args[0] == "exit")
     {
         terminate_allconnections();
+    }
+    else if (args[0] == "upload")
+    {
+        process_upload(atoi(args[1].c_str()), args[2]);
     }
     else
     {

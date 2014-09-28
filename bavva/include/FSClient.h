@@ -27,5 +27,6 @@ class FSClient : public FSNode
     void make_connection(std::string peer_ip, int peer_port);
     void terminate_connection(int connection_id);
     void terminate_allconnections(void);
+    void process_upload(int connection_id, std::string filename);
 };
 #endif /* _FSCLINET_H_ */
