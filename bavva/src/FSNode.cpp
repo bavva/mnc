@@ -272,7 +272,7 @@ void FSNode::bcast_serverip_list(void)
 void FSNode::start(void)
 {
     int nbytes;
-    std::string args[3];
+    std::string args[7];
     char space[] = " ";
 
     fd_set temp_read_fds;
@@ -376,7 +376,7 @@ void FSNode::start(void)
                 write_here = 0;
 
                 char *token = strtok(command_buffer, space);
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < 7; i++)
                 {
                     if (token == NULL)
                         break;
@@ -388,9 +388,8 @@ void FSNode::start(void)
                 std::transform(args[0].begin(), args[0].end(), args[0].begin(), tolower);
                 process_command(args);
 
-                args[0].clear();
-                args[1].clear();
-                args[2].clear();
+                for (int i = 0; i < 7; i++)
+                    args[i].clear();
             }
         }
     }

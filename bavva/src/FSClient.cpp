@@ -325,6 +325,9 @@ void FSClient::process_download(int connection_id, std::string filename)
     FSConnection *connection;
     char buffer[METADATA_SIZE];
 
+    if (filename.empty())
+        return;
+
     if ((connection_id <= 0) || (connection_id > connections.size()))
     {
         printf ("Given connection id is invalid\n");
@@ -396,7 +399,11 @@ void FSClient::process_command(std::string args[])
     }
     else if (args[0] == "download")
     {
+        // if any of the parameters are empty,
+        // process_download would return immediately
         process_download(atoi(args[1].c_str()), args[2]);
+        process_download(atoi(args[3].c_str()), args[4]);
+        process_download(atoi(args[5].c_str()), args[6]);
     }
     else
     {
