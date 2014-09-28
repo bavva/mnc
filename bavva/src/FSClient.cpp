@@ -273,6 +273,20 @@ void FSClient::terminate_connection(int connection_id)
     }
 }
 
+void FSClient::terminate_allconnections(void)
+{
+    FSConnection *connection = NULL;
+
+    while (!connections.empty())
+    {
+        connection = connections.front(); 
+        delete connection;
+        connections.pop_front();
+    }
+
+    request_exit = true;
+}
+
 void FSClient::process_command(std::string args[])
 {
     if (args[0] == "creator")
@@ -311,6 +325,10 @@ void FSClient::process_command(std::string args[])
     else if (args[0] == "terminate")
     {
         terminate_connection(atoi(args[1].c_str()));
+    }
+    else if (args[0] == "exit")
+    {
+        terminate_allconnections();
     }
     else
     {

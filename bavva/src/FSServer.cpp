@@ -82,6 +82,10 @@ void FSServer::process_command(std::string args[])
     {
         printf("TERMINATE command is not applicable for server\n");
     }
+    else if (args[0] == "exit")
+    {
+        printf("EXIT command is not applicable for server\n");
+    }
     else
     {
         std::cout << "Unknown command " << args[0] << " entered\n";

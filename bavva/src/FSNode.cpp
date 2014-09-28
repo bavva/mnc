@@ -312,6 +312,9 @@ void FSNode::start(void)
             }
         }
 
+        if (request_exit)
+            break; // break from main loop and let all destructors do their job
+
         if (bcast_serverip_list_flag)
         {
             bcast_serverip_list();

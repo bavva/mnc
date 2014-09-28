@@ -26,13 +26,14 @@ class FSNode
     int max_fd;                         // maximum of all fds
     int listen_fd;                      // fd on which we accept connections
 
-    char command_buffer[COMMAND_BUFFER];    // buffer to keep command data until completely entered
+    char command_buffer[COMMAND_BUFFER];        // buffer to keep command data until completely entered
     int write_here;                     // write from command_buffer + write_here
 
-    std::list<FSConnection*> connections;      // all established connections
-    std::list<ServerIP *> server_ip_list;   // server ip list
+    std::list<FSConnection*> connections;       // all established connections
+    std::list<ServerIP *> server_ip_list;       // server ip list
 
-    bool bcast_serverip_list_flag;  // flag to indicate we need to broadcast server ip list
+    bool bcast_serverip_list_flag;      // flag to indicate we need to broadcast server ip list
+    bool request_exit;                  // program exits (gracefully) if this flag is set
 
     public:
     FSNode(int port, bool is_server);
