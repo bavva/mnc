@@ -303,6 +303,7 @@ void FSConnection::on_ready_towrite(void)
             }
 
             body_bytesleft = stat_buffer.st_size;
+            header.content_length = body_bytesleft;
         }
     }
 
