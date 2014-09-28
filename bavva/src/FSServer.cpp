@@ -9,7 +9,18 @@
 
 // class implementation
 FSServer::FSServer(int port):FSNode(port, true){}
-FSServer::~FSServer(){}
+FSServer::~FSServer()
+{
+    StatisticsEntry *entry;
+
+    // delete all stuff in stats
+    while (!stats.empty())
+    {
+        entry = stats.front();
+        delete entry;
+        stats.pop_front();
+    }
+}
 
 void FSServer::process_newconnection(FSConnection *connection)
 {
@@ -41,6 +52,60 @@ void FSServer::process_register_request(FSHeader *header)
     }
 
     bcast_serverip_list_flag = true;
+}
+
+void FSServer::fetch_stats(void)
+{
+    StatisticsEntry *entry;
+
+    // delete all stuff in stats
+    while (!stats.empty())
+    {
+        entry = stats.front();
+        delete entry;
+        stats.pop_front();
+    }
+
+    // create new stats structure
+    for (std::list<ServerIP*>::iterator itx = server_ip_list.begin(); itx != server_ip_list.end(); itx++)
+    {
+        for (std::list<ServerIP*>::iterator ity = server_ip_list.begin(); ity != server_ip_list.end(); ity++)
+        {
+            if ((*itx)->server_name != (*ity)->server_name)
+            {
+                stats.push_back(new StatisticsEntry((*itx)->server_name, (*ity)->server_name));
+            }
+        }
+    }
+
+    // testing format
+    print_stats();
+}
+
+void FSServer::print_stats(void)
+{
+    StatisticsEntry *entry;
+
+    unsigned long download_speed, upload_speed;
+    printf ("%-35s%-35s%-20s%-30s%-20s%-30s\n", "Hostname 1", "Hostname 2", "Total Uploads", "Average upload Speed (bps)", "Total Downloads", "Average download speed (bps)");
+    for (std::list<StatisticsEntry*>::iterator it = stats.begin(); it != stats.end(); ++it)
+    {
+        entry = *it;
+        if (entry->total_uploads == 0 && entry->total_downloads == 0)
+            continue;
+
+        if (entry->total_download_time > 0)
+            download_speed = (entry->total_download_data * 1000000 / entry->total_download_time);
+        else
+            download_speed = 0;
+
+        if (entry->total_upload_time > 0)
+            upload_speed = (entry->total_upload_data * 1000000 / entry->total_upload_time);
+        else
+            upload_speed = 0;
+
+        printf ("%-35s%-35s%-20d%-30d%-20d%-30d\n", entry->host1.c_str(), entry->host2.c_str(), entry->total_uploads, upload_speed, entry->total_downloads, download_speed);
+    }
 }
 
 void FSServer::process_command(std::string args[])
@@ -93,6 +158,10 @@ void FSServer::process_command(std::string args[])
     else if (args[0] == "download")
     {
         printf("DOWNLOAD command is not applicable for server\n");
+    }
+    else if (args[0] == "statistics")
+    {
+        fetch_stats();
     }
     else
     {
