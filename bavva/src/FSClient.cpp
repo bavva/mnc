@@ -62,7 +62,7 @@ void FSClient::register_self(std::string server_ip, int server_port)
 
     connection->send_message(MSG_TYPE_REGISTER_REQUEST, 0, buffer);
 
-    server_ipaddress = server_ip;
+    server_ipaddress = connection->peer_ip;
 }
 
 void FSClient::make_connection(std::string peer_address, int peer_port)

@@ -381,7 +381,7 @@ void FSNode::start(void)
                     if (token == NULL)
                         break;
 
-                    args[i] = token;
+                    args[i].assign(token);
                     token = strtok(NULL, space);
                 }
 
