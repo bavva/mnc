@@ -190,6 +190,7 @@ void FSConnection::process_received_message(void)
             if (fp == NULL)
             {
                 printf("Unable to open file in write mode\n");
+                header.content_length = 0;  // making it 0 ensures that we finish this and get back to normal
                 return;
             }
 
