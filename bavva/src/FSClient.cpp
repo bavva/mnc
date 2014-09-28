@@ -214,15 +214,15 @@ void FSClient::process_register_response(FSHeader *header)
     }
 
     // remove any connections to host which is not there in server ip list
-    std::list<FSConnection*>::iterator it = connections.begin();
-    if (it == connections.end())
-        return;
-    else
-        it++;
-
     bool ip_found;
-    for (;it != connections.end();)
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end();)
     {
+        if ((*it)->with_server == true)
+        {
+            ++it;
+            continue;
+        }
+
         ip_found == false;
         for (std::list<ServerIP*>::iterator ite = server_ip_list.begin(); ite != server_ip_list.end(); ++ite)
         {
