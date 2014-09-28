@@ -166,7 +166,7 @@ void FSConnection::process_received_message(void)
         case MSG_TYPE_REGISTER_RESPONSE:
             fsnode->process_register_response(&header);
             break;
-        case MSG_TYPE_UPLOAD_FILE:
+        case MSG_TYPE_SEND_FILE:
             fp = fopen(header.metadata, "w");
             if (fp == NULL)
             {
@@ -226,7 +226,7 @@ void FSConnection::on_ready_toread(void)
     if (state == CS_READING_DATA)
     {
         // read body and reduce remaining amount
-        if (header.message_type == MSG_TYPE_UPLOAD_FILE)
+        if (header.message_type == MSG_TYPE_SEND_FILE)
         {
             nbytes = recv(sock_fd, packet_buffer, PACKET_BUFFER, 0);
             if (nbytes <= 0)
@@ -280,7 +280,7 @@ void FSConnection::on_ready_towrite(void)
         state = CS_WRITING_HEADER;
 
         // preprocessing before starting to send message
-        if (header.message_type == MSG_TYPE_UPLOAD_FILE)
+        if (header.message_type == MSG_TYPE_SEND_FILE)
         {
             fp = fopen(header.metadata, "r"); // header.metadata is the file name
             if (fp == NULL)
@@ -339,7 +339,7 @@ void FSConnection::on_ready_towrite(void)
     if (state == CS_WRITING_DATA)
     {
         // write body and reduce reamining amount
-        if (header.message_type == MSG_TYPE_UPLOAD_FILE)
+        if (header.message_type == MSG_TYPE_SEND_FILE)
         {
             // get nbytes to write to socket
             nbytes = fread(packet_buffer, 1, PACKET_BUFFER, fp);

@@ -317,7 +317,7 @@ void FSClient::process_upload(int connection_id, std::string filename)
     memset(buffer, 0, METADATA_SIZE);
     strncpy(buffer, filename.c_str(), METADATA_SIZE);
 
-    connection->send_message(MSG_TYPE_UPLOAD_FILE, 0, buffer);
+    connection->send_message(MSG_TYPE_SEND_FILE, 0, buffer);
 }
 
 void FSClient::process_command(std::string args[])
