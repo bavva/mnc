@@ -10,7 +10,7 @@ LIBS	=
 CC	= /usr/bin/g++
 CFLAGS	= -g -I$(INC_DIR)
 
-all: assignment1
+all: clean assignment1
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) -c -o $@ $< $(CFLAGS)

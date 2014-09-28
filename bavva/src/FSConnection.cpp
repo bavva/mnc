@@ -292,8 +292,8 @@ void FSConnection::on_ready_toread(void)
                 total_downloads++;
                 std::string local_hostname;
                 ip_to_hostname("127.0.0.1", local_hostname);
-                printf ("Rx: %s -> %s, File Size: %l Bytes, Time Taken: %d seconds, Rx Rate: %d bits/second\n", 
-                        peer_name.c_str(), local_hostname.c_str(), current_file_size, (int)(current_file_time/1000000), (int)((current_file_time > 0)?(current_file_size * 1000000 / current_file_time) : 0));
+                printf ("Rx: %s -> %s, File Size: %ul Bytes, Time Taken: %ul seconds, Rx Rate: %d bits/second\n", 
+                        peer_name.c_str(), local_hostname.c_str(), current_file_size, current_file_time/1000000, (int)((current_file_time > 0)?(current_file_size * 1000000 / current_file_time) : 0));
                 fflush(stdout);
 
                 state = CS_WAITINGTO_READ;
@@ -447,8 +447,8 @@ void FSConnection::on_ready_towrite(void)
                 total_uploads++;
                 std::string local_hostname;
                 ip_to_hostname("127.0.0.1", local_hostname);
-                printf ("Tx: %s -> %s, File Size: %l Bytes, Time Taken: %d seconds, Tx Rate: %d bits/second\n", 
-                        local_hostname.c_str(), peer_name.c_str(), current_file_size, (int)(current_file_time/1000000), (int)((current_file_time > 0) ? (current_file_size * 1000000 / current_file_time) : 0));
+                printf ("Tx: %s -> %s, File Size: %ul Bytes, Time Taken: %ul seconds, Tx Rate: %d bits/second\n", 
+                        local_hostname.c_str(), peer_name.c_str(), current_file_size, current_file_time/1000000, (int)((current_file_time > 0) ? (current_file_size * 1000000 / current_file_time) : 0));
                 fflush(stdout);
                 
                 state = CS_WAITINGTO_READ;
