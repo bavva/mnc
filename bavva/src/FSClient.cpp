@@ -223,7 +223,7 @@ void FSClient::process_register_response(FSHeader *header)
             continue;
         }
 
-        ip_found == false;
+        ip_found = false;
         for (std::list<ServerIP*>::iterator ite = server_ip_list.begin(); ite != server_ip_list.end(); ++ite)
         {
             if ((*ite)->server_ip == (*it)->peer_ip)
