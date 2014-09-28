@@ -344,18 +344,18 @@ void FSConnection::on_ready_towrite(void)
             fp = fopen(header.metadata, "r"); // header.metadata is the file name
             if (fp == NULL)
             {
-                printf ("Upload failed because unable to open file\n");
+                printf ("Unable to send file because file could not be opened\n");
                 state = CS_WAITINGTO_READ;
                 start_reading();
                 return;
             }
 
-            if (stat(header.metadata, &stat_buffer) != 0)
+            if ((stat(header.metadata, &stat_buffer) != 0) || (!S_ISREG(stat_buffer.st_mode)))
             {
                 fclose(fp);
                 fp = NULL;
 
-                printf ("Upload failed because unable to open file\n");
+                printf ("Unable to send file because file could not be opened\n");
                 state = CS_WAITINGTO_READ;
                 start_reading();
                 return;
