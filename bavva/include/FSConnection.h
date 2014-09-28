@@ -40,12 +40,16 @@ class FSConnection
     bool is_reading;                    // currently are we reading or writing to socket
     FSNode *fsnode;                     // our FSServer or FSClient object
     FSHeader header;                    // buffer to send or recreate headers
+    char *header_ptr;                   // to remember until which point header is written
 
     int header_bytesleft;               // bytes left to read/write header
     int body_bytesleft;                 // bytes left to read/write body
 
     ConnState state;                    // to run the state machine
     bool link_broken;                   // if this flas is set, this connection will be closed soon
+
+    FILE *fp;                           // file handle to process upload and download
+    char packet_buffer[PACKET_BUFFER];  // buffer used to send and receive file chunks
 
     FSConnection(bool with_server, std::string hostname, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);

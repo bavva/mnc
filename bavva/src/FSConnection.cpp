@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <assert.h>
+#include <sys/stat.h>
 
 #include "../include/FSConnection.h"
 #include "../include/FSNode.h"
@@ -39,6 +40,8 @@ FSConnection::FSConnection(bool with_server, std::string hostname, int port, FSN
     state = CS_WAITINGTO_READ;
     link_broken = false;
     is_reading = true;
+
+    fp = NULL;
 }
 
 FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd), fsnode(fsnode)
@@ -51,6 +54,8 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     state = CS_WAITINGTO_READ;
     link_broken = false;
     is_reading = true;
+
+    fp = NULL;
 }
 
 FSConnection::~FSConnection()
@@ -110,6 +115,7 @@ void FSConnection::send_message(FSMessageType msg_type, int content_length, char
     if (link_broken)
     {
         printf("Can't send. This link is broken\n");
+        return;
     }
 
     if (state != CS_WAITINGTO_READ)
@@ -160,6 +166,15 @@ void FSConnection::process_received_message(void)
         case MSG_TYPE_REGISTER_RESPONSE:
             fsnode->process_register_response(&header);
             break;
+        case MSG_TYPE_UPLOAD_FILE:
+            fp = fopen(header.metadata, "w");
+            if (fp == NULL)
+            {
+                printf ("Unable to open file in write mode\n");
+                return;
+            }
+            body_bytesleft = header.content_length;
+            break;
         default:
             break;
     }
@@ -167,23 +182,26 @@ void FSConnection::process_received_message(void)
 
 void FSConnection::on_ready_toread(void)
 {
-    int nbytes;
+    int nbytes, nbytes_left, nbytes_written;
+    char *buffer_ptr;
 
     if (state == CS_WAITINGTO_READ)
     {
+        header_ptr = (char *)(&header);
         header_bytesleft = sizeof(header);
         state = CS_READING_HEADER;
     }
 
     if (state == CS_READING_HEADER)
     {
-        nbytes = recv(sock_fd, &header, header_bytesleft, 0);
+        nbytes = recv(sock_fd, header_ptr, header_bytesleft, 0);
         if (nbytes <= 0)
         {
             link_broken = true;
             return;
         }
         header_bytesleft -= nbytes;
+        header_ptr += nbytes;
 
         if (header_bytesleft == 0)
         {
@@ -199,6 +217,7 @@ void FSConnection::on_ready_toread(void)
             else
             {
                 // also set body size etc based on header
+                // or do it in process_received_message function
                 state = CS_READING_DATA;
             }
         }
@@ -207,28 +226,96 @@ void FSConnection::on_ready_toread(void)
     if (state == CS_READING_DATA)
     {
         // read body and reduce remaining amount
+        if (header.message_type == MSG_TYPE_UPLOAD_FILE)
+        {
+            nbytes = recv(sock_fd, packet_buffer, PACKET_BUFFER, 0);
+            if (nbytes <= 0)
+            {
+                fclose(fp);
+                fp = NULL;
+                link_broken = true;
+                return;
+            }
+
+            for (buffer_ptr = packet_buffer, nbytes_left = nbytes; nbytes_left > 0;)
+            {
+                nbytes_written = fwrite(buffer_ptr, 1, nbytes_left, fp);
+                if (nbytes_written <= 0)
+                {
+                    fclose(fp);
+                    fp = NULL;
+                    link_broken = true;
+                    return;
+                }
+                nbytes_left -= nbytes_written;
+                buffer_ptr += nbytes_written;
+            }
+
+            body_bytesleft -= nbytes;
+
+            if (body_bytesleft == 0)
+            {
+                fclose(fp);
+                fp = NULL;
+
+                state = CS_WAITINGTO_READ;
+                start_reading();
+
+                return;
+            }
+        }
     }
 }
 
 void FSConnection::on_ready_towrite(void)
 {
-    int nbytes;
+    int nbytes, nbytes_left, nbytes_sent;
+    struct stat stat_buffer;
+    char *buffer_ptr;
 
     if (state == CS_WAITINGTO_WRITE)
     {
+        header_ptr = (char *)(&header);
         header_bytesleft = sizeof(header);
         state = CS_WRITING_HEADER;
+
+        // preprocessing before starting to send message
+        if (header.message_type == MSG_TYPE_UPLOAD_FILE)
+        {
+            fp = fopen(header.metadata, "r"); // header.metadata is the file name
+            if (fp == NULL)
+            {
+                printf ("Upload failed because unable to open file\n");
+                state = CS_WAITINGTO_READ;
+                start_reading();
+                return;
+            }
+
+            if (stat(header.metadata, &stat_buffer) != 0)
+            {
+                fclose(fp);
+                fp = NULL;
+
+                printf ("Upload failed because unable to open file\n");
+                state = CS_WAITINGTO_READ;
+                start_reading();
+                return;
+            }
+
+            body_bytesleft = stat_buffer.st_size;
+        }
     }
 
     if (state == CS_WRITING_HEADER)
     {
-        nbytes = send(sock_fd, &header, header_bytesleft, 0);
+        nbytes = send(sock_fd, header_ptr, header_bytesleft, 0);
         if (nbytes <= 0)
         {
             link_broken = true;
             return;
         }
         header_bytesleft -= nbytes;
+        header_ptr += nbytes;
 
         if (header_bytesleft == 0)
         {
@@ -237,10 +324,12 @@ void FSConnection::on_ready_towrite(void)
             {
                 state = CS_WAITINGTO_READ;
                 start_reading();
+                return;
             }
             else
             {
                 // also set body size etc based on header
+                // or do it in preprocessing stage
                 state = CS_WRITING_DATA;
             }
         }
@@ -249,5 +338,59 @@ void FSConnection::on_ready_towrite(void)
     if (state == CS_WRITING_DATA)
     {
         // write body and reduce reamining amount
+        if (header.message_type == MSG_TYPE_UPLOAD_FILE)
+        {
+            // get nbytes to write to socket
+            nbytes = fread(packet_buffer, 1, PACKET_BUFFER, fp);
+            if (nbytes == 0)
+            {
+                fclose(fp);
+                fp = NULL;
+
+                if (body_bytesleft != 0)
+                {
+                    printf ("EOF encountered before expected\n");
+                    link_broken = true;
+                }
+                else
+                {
+                    printf ("Successfully sent file %s\n", header.metadata);
+                    state = CS_WAITINGTO_READ;
+                    start_reading();
+                }
+
+                return;
+            }
+
+            // send nbytes in loop
+            for (buffer_ptr = packet_buffer, nbytes_left = nbytes; nbytes_left > 0; )
+            {
+                nbytes_sent = send(sock_fd, buffer_ptr, nbytes_left, 0);
+                if (nbytes_sent == 0)
+                {
+                    fclose(fp);
+                    fp = NULL;
+                    link_broken = true;
+                    return;
+                }
+
+                nbytes_left -= nbytes_sent;
+                buffer_ptr += nbytes_sent;
+            }
+
+            // decrement remaining body size by nbytes
+            body_bytesleft -= nbytes;
+
+            if (body_bytesleft == 0)
+            {
+                fclose(fp);
+                fp = NULL;
+                
+                state = CS_WAITINGTO_READ;
+                start_reading();
+
+                return;
+            }
+        }
     }
 }

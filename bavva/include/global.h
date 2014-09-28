@@ -5,6 +5,7 @@
 #define MAX_PARALLEL_DOWNLOAD 3
 #define METADATA_SIZE 1024
 #define COMMAND_BUFFER 1024
+#define PACKET_BUFFER 1024
 
 #include <string>
 
@@ -12,6 +13,7 @@ typedef enum
 {
     MSG_TYPE_REGISTER_REQUEST,
     MSG_TYPE_REGISTER_RESPONSE,
+    MSG_TYPE_UPLOAD_FILE,
     MSG_MAX
 }FSMessageType;
 

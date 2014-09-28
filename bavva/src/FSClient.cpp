@@ -289,6 +289,9 @@ void FSClient::terminate_allconnections(void)
 
 void FSClient::process_upload(int connection_id, std::string filename)
 {
+    FSConnection *connection;
+    char buffer[METADATA_SIZE];
+
     if ((connection_id <= 0) || (connection_id > connections.size()))
     {
         printf ("Given connection id is invalid\n");
@@ -305,6 +308,16 @@ void FSClient::process_upload(int connection_id, std::string filename)
         printf ("File does not exist or it is not readable\n");
         return;
     }
+
+    std::list<FSConnection*>::iterator it = connections.begin();
+    std::advance(it, connection_id - 1);
+    connection = *it;
+
+    // clean the buffer
+    memset(buffer, 0, METADATA_SIZE);
+    strncpy(buffer, filename.c_str(), METADATA_SIZE);
+
+    connection->send_message(MSG_TYPE_UPLOAD_FILE, 0, buffer);
 }
 
 void FSClient::process_command(std::string args[])
