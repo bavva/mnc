@@ -86,6 +86,14 @@ void FSServer::process_command(std::string args[])
     {
         printf("EXIT command is not applicable for server\n");
     }
+    else if (args[0] == "upload")
+    {
+        printf("UPLOAD command is not applicable for server\n");
+    }
+    else if (args[0] == "download")
+    {
+        printf("DOWNLOAD command is not applicable for server\n");
+    }
     else
     {
         std::cout << "Unknown command " << args[0] << " entered\n";
