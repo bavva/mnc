@@ -352,13 +352,11 @@ void FSClient::process_download(int connection_id, std::string filename)
 
 void FSClient::print_stats(void)
 {
-    std::string local_hostname;
     FSConnection *connection;
 
     unsigned long download_speed, upload_speed;
 
-    ip_to_hostname(local_ip.c_str(), local_hostname);
-    printf ("%-35s%-35s%-20s%-30s%-20s%-30s\n", "Hostname 1", "Hostname 2", "Total Uploads", "Average upload Speed (bps)", "Total Downloads", "Average download speed (bps)");
+    printf ("%-35s%-20s%-30s%-20s%-30s\n", "Hostname", "Total Uploads", "Average upload Speed (bps)", "Total Downloads", "Average download speed (bps)");
     for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
     {
         connection = *it;
@@ -375,7 +373,7 @@ void FSClient::print_stats(void)
         else
             upload_speed = 0;
 
-        printf ("%-35s%-35s%-20d%-30d%-20d%-30d\n", local_hostname.c_str(), connection->peer_name.c_str(), connection->total_uploads, upload_speed, connection->total_downloads, download_speed);
+        printf ("%-35s%-20d%-30d%-20d%-30d\n", connection->peer_name.c_str(), connection->total_uploads, upload_speed, connection->total_downloads, download_speed);
     }
 }
 
