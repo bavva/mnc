@@ -25,5 +25,6 @@ class FSClient : public FSNode
     void process_newconnection(FSConnection *connection);
     void process_register_response(FSHeader *header);
     void make_connection(std::string peer_ip, int peer_port);
+    void terminate_connection(int connection_id);
 };
 #endif /* _FSCLINET_H_ */

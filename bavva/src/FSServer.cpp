@@ -78,6 +78,10 @@ void FSServer::process_command(std::string args[])
     {
         print_server_ip_list();
     }
+    else if (args[0] == "terminate")
+    {
+        printf("TERMINATE command is not applicable for server\n");
+    }
     else
     {
         std::cout << "Unknown command " << args[0] << " entered\n";

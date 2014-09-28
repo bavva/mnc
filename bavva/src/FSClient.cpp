@@ -249,6 +249,29 @@ void FSClient::process_register_response(FSHeader *header)
     print_server_ip_list();
 }
 
+void FSClient::terminate_connection(int connection_id)
+{
+    if (connection_id <= 0)
+    {
+        printf("Not a valid connection id\n");
+        return;
+    }
+
+    std::list<FSConnection*>::iterator it = connections.begin();
+    std::advance(it, connection_id - 1);
+
+    if (*it != NULL)
+    {
+        printf ("Terminating connection id %d with %s\n", connection_id, (*it)->peer_ip.c_str());
+        delete (*it);
+        connections.erase(it);
+    }
+    else
+    {
+        printf ("No valid connection found for given id %d\n", connection_id);
+    }
+}
+
 void FSClient::process_command(std::string args[])
 {
     if (args[0] == "creator")
@@ -283,6 +306,10 @@ void FSClient::process_command(std::string args[])
     else if (args[0] == "list")
     {
         print_all_connections();
+    }
+    else if (args[0] == "terminate")
+    {
+        terminate_connection(atoi(args[1].c_str()));
     }
     else
     {
