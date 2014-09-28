@@ -261,6 +261,9 @@ void FSConnection::on_ready_toread(void)
                 state = CS_WAITINGTO_READ;
                 start_reading();
 
+                printf ("Successfully received file %s\n", header.metadata);
+                fflush(stdout);
+
                 return;
             }
         }
@@ -282,6 +285,9 @@ void FSConnection::on_ready_towrite(void)
         // preprocessing before starting to send message
         if (header.message_type == MSG_TYPE_SEND_FILE)
         {
+            char *bn;
+            char filename[MAX_FILENAME_LEN];
+
             fp = fopen(header.metadata, "r"); // header.metadata is the file name
             if (fp == NULL)
             {
@@ -304,6 +310,12 @@ void FSConnection::on_ready_towrite(void)
 
             body_bytesleft = stat_buffer.st_size;
             header.content_length = body_bytesleft;
+
+            // send only base name to remote side. no absolute path. 
+            // file gets saved in current directory
+            strcpy(filename, header.metadata);
+            bn = basename(filename);
+            strcpy(header.metadata, bn);
         }
     }
 
@@ -356,6 +368,8 @@ void FSConnection::on_ready_towrite(void)
                 else
                 {
                     printf ("Successfully sent file %s\n", header.metadata);
+                    fflush(stdout);
+
                     state = CS_WAITINGTO_READ;
                     start_reading();
                 }
@@ -386,6 +400,9 @@ void FSConnection::on_ready_towrite(void)
             {
                 fclose(fp);
                 fp = NULL;
+
+                printf ("Successfully sent file %s\n", header.metadata);
+                fflush(stdout);
                 
                 state = CS_WAITINGTO_READ;
                 start_reading();

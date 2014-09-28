@@ -6,6 +6,7 @@
 #define METADATA_SIZE 1024
 #define COMMAND_BUFFER 1024
 #define PACKET_BUFFER 1024
+#define MAX_FILENAME_LEN 128
 
 #include <string>
 

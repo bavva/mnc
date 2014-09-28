@@ -83,7 +83,7 @@ void FSClient::make_connection(std::string peer_address, int peer_port)
         return;
     }
 
-    if (peer_ip == local_ip)
+    if ((peer_ip == local_ip) || (peer_ip == "127.0.0.1"))
     {
         printf ("Self connections are not allowed\n");
         return;
