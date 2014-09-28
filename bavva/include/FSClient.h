@@ -28,5 +28,6 @@ class FSClient : public FSNode
     void terminate_connection(int connection_id);
     void terminate_allconnections(void);
     void process_upload(int connection_id, std::string filename);
+    void process_download(int connection_id, std::string filename);
 };
 #endif /* _FSCLINET_H_ */

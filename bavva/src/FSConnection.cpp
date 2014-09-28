@@ -183,13 +183,22 @@ void FSConnection::process_received_message(void)
         case MSG_TYPE_REGISTER_RESPONSE:
             fsnode->process_register_response(&header);
             break;
+        case MSG_TYPE_REQUEST_FILE:
+            break;
         case MSG_TYPE_SEND_FILE:
             fp = fopen(header.metadata, "w");
             if (fp == NULL)
             {
-                printf ("Unable to open file in write mode\n");
+                printf("Unable to open file in write mode\n");
                 return;
             }
+
+            if (header.content_length == 0)
+            {
+                printf("NOTICE: %s is either empty or remote peer could not send it\n", header.metadata);
+                return;
+            }
+
             body_bytesleft = header.content_length;
             current_file_size = header.content_length;
             current_file_time = 0;
@@ -228,9 +237,16 @@ void FSConnection::on_ready_toread(void)
             // process the received message
             process_received_message();
 
-            // these are messages with out bodies
-            if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE)
+            if (header.message_type == MSG_TYPE_REQUEST_FILE)
             {
+                header.message_type = MSG_TYPE_SEND_FILE;
+                state = CS_WAITINGTO_WRITE;
+                start_writing();
+                return;
+            }
+            else if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE || header.content_length == 0)
+            {
+                // these are messages with out bodies
                 state = CS_WAITINGTO_READ;
                 start_reading();
             }
@@ -373,7 +389,7 @@ void FSConnection::on_ready_towrite(void)
         if (header_bytesleft == 0)
         {
             // these are messages with out bodies
-            if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE)
+            if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE || header.message_type == MSG_TYPE_REQUEST_FILE || header.content_length == 0)
             {
                 state = CS_WAITINGTO_READ;
                 start_reading();

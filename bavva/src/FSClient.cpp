@@ -320,6 +320,33 @@ void FSClient::process_upload(int connection_id, std::string filename)
     connection->send_message(MSG_TYPE_SEND_FILE, 0, buffer);
 }
 
+void FSClient::process_download(int connection_id, std::string filename)
+{
+    FSConnection *connection;
+    char buffer[METADATA_SIZE];
+
+    if ((connection_id <= 0) || (connection_id > connections.size()))
+    {
+        printf ("Given connection id is invalid\n");
+        return;
+    }
+    else if (connection_id == 1)
+    {
+        printf ("Downloading file from server is not allowed\n");
+        return;
+    }
+
+    std::list<FSConnection*>::iterator it = connections.begin();
+    std::advance(it, connection_id - 1);
+    connection = *it;
+
+    // clean the buffer
+    memset(buffer, 0, METADATA_SIZE);
+    strncpy(buffer, filename.c_str(), METADATA_SIZE);
+
+    connection->send_message(MSG_TYPE_REQUEST_FILE, 0, buffer);
+}
+
 void FSClient::process_command(std::string args[])
 {
     if (args[0] == "creator")
@@ -366,6 +393,10 @@ void FSClient::process_command(std::string args[])
     else if (args[0] == "upload")
     {
         process_upload(atoi(args[1].c_str()), args[2]);
+    }
+    else if (args[0] == "download")
+    {
+        process_download(atoi(args[1].c_str()), args[2]);
     }
     else
     {
