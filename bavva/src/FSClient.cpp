@@ -350,6 +350,35 @@ void FSClient::process_download(int connection_id, std::string filename)
     connection->send_message(MSG_TYPE_REQUEST_FILE, 0, buffer);
 }
 
+void FSClient::print_stats(void)
+{
+    std::string local_hostname;
+    FSConnection *connection;
+
+    unsigned long download_speed, upload_speed;
+
+    ip_to_hostname(local_ip.c_str(), local_hostname);
+    printf ("%-35s%-35s%-20s%-30s%-20s%-30s\n", "Hostname 1", "Hostname 2", "Total Uploads", "Average upload Speed (bps)", "Total Downloads", "Average download speed (bps)");
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    {
+        connection = *it;
+        if (connection->total_uploads == 0 && connection->total_downloads == 0)
+            continue;
+
+        if (connection->total_download_time > 0)
+            download_speed = (connection->total_download_data * 1000000 / connection->total_download_time);
+        else
+            download_speed = 0;
+
+        if (connection->total_upload_time > 0)
+            upload_speed = (connection->total_upload_data * 1000000 / connection->total_upload_time);
+        else
+            upload_speed = 0;
+
+        printf ("%-35s%-35s%-20d%-30d%-20d%-30d\n", local_hostname.c_str(), connection->peer_name.c_str(), connection->total_uploads, upload_speed, connection->total_downloads, download_speed);
+    }
+}
+
 void FSClient::process_command(std::string args[])
 {
     if (args[0] == "creator")
@@ -404,6 +433,10 @@ void FSClient::process_command(std::string args[])
         process_download(atoi(args[1].c_str()), args[2]);
         process_download(atoi(args[3].c_str()), args[4]);
         process_download(atoi(args[5].c_str()), args[6]);
+    }
+    else if (args[0] == "statistics")
+    {
+        print_stats();
     }
     else
     {

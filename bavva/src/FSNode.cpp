@@ -212,6 +212,11 @@ void FSNode::set_bcast_serverip_list_flag(void)
     bcast_serverip_list_flag = true;
 }
 
+std::string FSNode::get_localip(void)
+{
+    return local_ip;
+}
+
 void FSNode::print_server_ip_list(void)
 {
     int i = 1;

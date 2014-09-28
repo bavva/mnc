@@ -310,9 +310,9 @@ void FSConnection::on_ready_toread(void)
 
                 total_downloads++;
                 std::string local_hostname;
-                ip_to_hostname("127.0.0.1", local_hostname);
+                ip_to_hostname((fsnode->get_localip()).c_str(), local_hostname);
                 printf ("File %s is received successfully from %s\n", header.metadata, peer_name.c_str());
-                printf ("Rx: %s -> %s, File Size: %ul Bytes, Time Taken: %ul seconds, Rx Rate: %d bits/second\n", 
+                printf ("Rx: %s -> %s, File Size: %ld Bytes, Time Taken: %ld seconds, Rx Rate: %d bits/second\n", 
                         peer_name.c_str(), local_hostname.c_str(), current_file_size, current_file_time/1000000, (int)((current_file_time > 0)?(current_file_size * 1000000 / current_file_time) : 0));
                 fflush(stdout);
 
@@ -468,9 +468,9 @@ void FSConnection::on_ready_towrite(void)
 
                 total_uploads++;
                 std::string local_hostname;
-                ip_to_hostname("127.0.0.1", local_hostname);
+                ip_to_hostname((fsnode->get_localip()).c_str(), local_hostname);
                 printf ("File %s is sent successfully to %s\n", header.metadata, peer_name.c_str());
-                printf ("Tx: %s -> %s, File Size: %ul Bytes, Time Taken: %ul seconds, Tx Rate: %d bits/second\n", 
+                printf ("Tx: %s -> %s, File Size: %ld Bytes, Time Taken: %ld seconds, Tx Rate: %d bits/second\n", 
                         local_hostname.c_str(), peer_name.c_str(), current_file_size, current_file_time/1000000, (int)((current_file_time > 0) ? (current_file_size * 1000000 / current_file_time) : 0));
                 fflush(stdout);
                 
