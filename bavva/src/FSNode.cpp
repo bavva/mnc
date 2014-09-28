@@ -224,6 +224,17 @@ void FSNode::print_server_ip_list(void)
     }
 }
 
+void FSNode::print_all_connections(void)
+{
+    int i = 1;
+
+    printf ("%-5s%-35s%-20s%-8s\n", "ID", "Hostname", "IP Address", "Port No");
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    {
+        printf ("%-5d%-35s%-20s%-8d\n", i++, (*it)->peer_name.c_str(), (*it)->peer_ip.c_str(), (*it)->peer_port);
+    }
+}
+
 void FSNode::bcast_serverip_list(void)
 {
     int nchars;

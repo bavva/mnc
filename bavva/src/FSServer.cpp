@@ -28,6 +28,18 @@ void FSServer::process_register_request(FSHeader *header)
     portstring = strtok(NULL, ",");
 
     add_serverip(new ServerIP(ipaddress, hostname, atoi(portstring)));
+
+    // uppdate hostname and ipaddress in connections list
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    {
+        if ((*it)->peer_ip == ipaddress)
+        {
+            (*it)->peer_name = hostname;
+            (*it)->peer_port = atoi(portstring);
+            break;
+        }
+    }
+
     bcast_serverip_list_flag = true;
 }
 

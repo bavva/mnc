@@ -32,6 +32,7 @@ class FSConnection
     bool with_server;                   // is this connection with server
 
     std::string peer_ip;                // ip address of the peer
+    std::string peer_name;              // hostname of the peer
     int peer_port;                      // port of the peer
 
     int sock_fd;                        // socket for this connection

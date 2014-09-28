@@ -68,6 +68,7 @@ void FSClient::register_self(std::string server_ip, int server_port)
 void FSClient::make_connection(std::string peer_address, int peer_port)
 {
     std::string peer_ip;
+    std::string peer_name;
 
     if (connections.size() >= 4) // don't accept new connections
     {
@@ -104,6 +105,7 @@ void FSClient::make_connection(std::string peer_address, int peer_port)
         // delete connection if the peer is not among server ip list
         if ((*it)->server_ip == peer_ip)
         {
+            peer_name = (*it)->server_name;
             ip_found = true;
             break;
         }
@@ -122,6 +124,8 @@ void FSClient::make_connection(std::string peer_address, int peer_port)
         delete connection;
         return;
     }
+
+    connection->peer_name = peer_name;
 
     printf ("Successfully established connection to %s:%d\n", peer_ip.c_str(), peer_port);
     connections.push_back(connection);
@@ -159,6 +163,8 @@ void FSClient::process_newconnection(FSConnection *connection)
         // delete connection if the peer is not among server ip list
         if (connection->peer_ip == (*it)->server_ip)
         {
+            connection->peer_name = (*it)->server_name;
+            connection->peer_port = (*it)->port;
             ip_found = true;
             break;
         }
@@ -273,6 +279,10 @@ void FSClient::process_command(std::string args[])
     else if (args[0] == "connect")
     {
         make_connection(args[1], atoi(args[2].c_str()));
+    }
+    else if (args[0] == "list")
+    {
+        print_all_connections();
     }
     else
     {

@@ -56,5 +56,6 @@ class FSNode
     void add_serverip(ServerIP *sip);
     void set_bcast_serverip_list_flag(void);
     void print_server_ip_list(void);
+    void print_all_connections(void);
 };
 #endif /* _FSNODE_H_ */
