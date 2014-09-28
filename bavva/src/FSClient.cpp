@@ -239,6 +239,7 @@ void FSClient::process_register_response(FSHeader *header)
     }
 
     // print new server ip list
+    printf ("\nServer-IP-List update received:\n");
     print_server_ip_list();
 }
 

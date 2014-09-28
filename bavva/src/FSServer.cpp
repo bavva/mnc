@@ -62,6 +62,10 @@ void FSServer::process_command(std::string args[])
     {
         printf("CONNECT command is not applicable for server\n");
     }
+    else if (args[0] == "list")
+    {
+        print_server_ip_list();
+    }
     else
     {
         std::cout << "Unknown command " << args[0] << " entered\n";

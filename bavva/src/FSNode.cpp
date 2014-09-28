@@ -216,7 +216,6 @@ void FSNode::print_server_ip_list(void)
 {
     int i = 1;
 
-    printf ("\nServer-IP-List update received:\n");
     printf ("%-5s%-35s%-20s%-8s\n", "ID", "Hostname", "IP Address", "Port No");
     for (std::list<ServerIP*>::iterator it = server_ip_list.begin(); it != server_ip_list.end(); ++it)
     {
