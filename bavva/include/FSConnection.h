@@ -51,6 +51,17 @@ class FSConnection
     FILE *fp;                           // file handle to process upload and download
     char packet_buffer[PACKET_BUFFER];  // buffer used to send and receive file chunks
 
+    // statistics
+    int total_downloads;                // from remote peer to us
+    int total_uploads;                  // from us to remote peer
+    unsigned long total_upload_data;    // total data we uploaded
+    unsigned long total_download_data;  // total data we downloaded
+    unsigned long total_upload_time;    // time taken in micro seconds for all upload data
+    unsigned long total_download_time;  // time taken in micro seconds for all download data
+
+    unsigned long current_file_size;    // size of current file we are dealing with
+    unsigned long current_file_time;    // duration we spent in micro seconds on sending or receiving
+
     FSConnection(bool with_server, std::string hostname, int port, FSNode *fsnode);
     FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd);
     ~FSConnection();

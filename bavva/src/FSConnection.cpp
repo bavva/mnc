@@ -5,6 +5,7 @@
 #include <cstring>
 #include <assert.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include "../include/FSConnection.h"
 #include "../include/FSNode.h"
@@ -42,6 +43,14 @@ FSConnection::FSConnection(bool with_server, std::string hostname, int port, FSN
     is_reading = true;
 
     fp = NULL;
+    total_downloads = 0;
+    total_uploads = 0;
+    total_upload_data = 0;
+    total_download_data = 0;
+    total_upload_time = 0;
+    total_download_time = 0;
+    current_file_size = 0;
+    current_file_time = 0;
 }
 
 FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *fsnode, int fd):with_server(with_server), peer_ip(ip), peer_port(port), sock_fd(fd), fsnode(fsnode)
@@ -56,6 +65,14 @@ FSConnection::FSConnection(bool with_server, std::string ip, int port, FSNode *f
     is_reading = true;
 
     fp = NULL;
+    total_downloads = 0;
+    total_uploads = 0;
+    total_upload_data = 0;
+    total_download_data = 0;
+    total_upload_time = 0;
+    total_download_time = 0;
+    current_file_size = 0;
+    current_file_time = 0;
 }
 
 FSConnection::~FSConnection()
@@ -174,6 +191,8 @@ void FSConnection::process_received_message(void)
                 return;
             }
             body_bytesleft = header.content_length;
+            current_file_size = header.content_length;
+            current_file_time = 0;
             break;
         default:
             break;
@@ -182,8 +201,9 @@ void FSConnection::process_received_message(void)
 
 void FSConnection::on_ready_toread(void)
 {
-    int nbytes, nbytes_left, nbytes_written;
+    int nbytes, nbytes_left, nbytes_written, time_taken;
     char *buffer_ptr;
+    struct timeval start_time, end_time;
 
     if (state == CS_WAITINGTO_READ)
     {
@@ -228,6 +248,9 @@ void FSConnection::on_ready_toread(void)
         // read body and reduce remaining amount
         if (header.message_type == MSG_TYPE_SEND_FILE)
         {
+            // start counting time
+            gettimeofday(&start_time, NULL);
+
             nbytes = recv(sock_fd, packet_buffer, PACKET_BUFFER, 0);
             if (nbytes <= 0)
             {
@@ -251,6 +274,14 @@ void FSConnection::on_ready_toread(void)
                 buffer_ptr += nbytes_written;
             }
 
+            // stop counting time
+            gettimeofday(&end_time, NULL);
+
+            time_taken = (end_time.tv_sec * 1000000 + end_time.tv_usec) - (start_time.tv_sec * 1000000 + start_time.tv_usec);
+            current_file_time += time_taken;
+            total_download_data += nbytes;
+            total_download_time += time_taken;
+
             body_bytesleft -= nbytes;
 
             if (body_bytesleft == 0)
@@ -258,11 +289,15 @@ void FSConnection::on_ready_toread(void)
                 fclose(fp);
                 fp = NULL;
 
+                total_downloads++;
+                std::string local_hostname;
+                ip_to_hostname("127.0.0.1", local_hostname);
+                printf ("Rx: %s -> %s, File Size: %l Bytes, Time Taken: %d seconds, Rx Rate: %d bits/second\n", 
+                        peer_name.c_str(), local_hostname.c_str(), current_file_size, (int)(current_file_time/1000000), (int)((current_file_time > 0)?(current_file_size * 1000000 / current_file_time) : 0));
+                fflush(stdout);
+
                 state = CS_WAITINGTO_READ;
                 start_reading();
-
-                printf ("Successfully received file %s\n", header.metadata);
-                fflush(stdout);
 
                 return;
             }
@@ -272,9 +307,10 @@ void FSConnection::on_ready_toread(void)
 
 void FSConnection::on_ready_towrite(void)
 {
-    int nbytes, nbytes_left, nbytes_sent;
+    int nbytes, nbytes_left, nbytes_sent, time_taken;
     struct stat stat_buffer;
     char *buffer_ptr;
+    struct timeval start_time, end_time;
 
     if (state == CS_WAITINGTO_WRITE)
     {
@@ -307,6 +343,10 @@ void FSConnection::on_ready_towrite(void)
                 start_reading();
                 return;
             }
+
+            // for statistics
+            current_file_size = stat_buffer.st_size;
+            current_file_time = 0;
 
             body_bytesleft = stat_buffer.st_size;
             header.content_length = body_bytesleft;
@@ -353,6 +393,9 @@ void FSConnection::on_ready_towrite(void)
         // write body and reduce reamining amount
         if (header.message_type == MSG_TYPE_SEND_FILE)
         {
+            // start counting time
+            gettimeofday(&start_time, NULL);
+
             // get nbytes to write to socket
             nbytes = fread(packet_buffer, 1, PACKET_BUFFER, fp);
             if (nbytes == 0)
@@ -364,14 +407,6 @@ void FSConnection::on_ready_towrite(void)
                 {
                     printf ("EOF encountered before expected\n");
                     link_broken = true;
-                }
-                else
-                {
-                    printf ("Successfully sent file %s\n", header.metadata);
-                    fflush(stdout);
-
-                    state = CS_WAITINGTO_READ;
-                    start_reading();
                 }
 
                 return;
@@ -393,6 +428,14 @@ void FSConnection::on_ready_towrite(void)
                 buffer_ptr += nbytes_sent;
             }
 
+            // stop counting time
+            gettimeofday(&end_time, NULL);
+
+            time_taken = (end_time.tv_sec * 1000000 + end_time.tv_usec) - (start_time.tv_sec * 1000000 + start_time.tv_usec);
+            current_file_time += time_taken;
+            total_upload_data += nbytes;
+            total_upload_time += time_taken;
+
             // decrement remaining body size by nbytes
             body_bytesleft -= nbytes;
 
@@ -401,7 +444,11 @@ void FSConnection::on_ready_towrite(void)
                 fclose(fp);
                 fp = NULL;
 
-                printf ("Successfully sent file %s\n", header.metadata);
+                total_uploads++;
+                std::string local_hostname;
+                ip_to_hostname("127.0.0.1", local_hostname);
+                printf ("Tx: %s -> %s, File Size: %l Bytes, Time Taken: %d seconds, Tx Rate: %d bits/second\n", 
+                        local_hostname.c_str(), peer_name.c_str(), current_file_size, (int)(current_file_time/1000000), (int)((current_file_time > 0) ? (current_file_size * 1000000 / current_file_time) : 0));
                 fflush(stdout);
                 
                 state = CS_WAITINGTO_READ;
