@@ -117,7 +117,7 @@ void FSClient::make_connection(std::string peer_address, int peer_port)
         return;
     }
 
-    FSConnection *connection = new FSConnection(true, peer_ip.c_str(), peer_port, (FSNode *)this);
+    FSConnection *connection = new FSConnection(false, peer_ip.c_str(), peer_port, (FSNode *)this);
     if (connection->is_broken())
     {
         printf ("Unable to establish connection to %s:%d\n", peer_ip.c_str(), peer_port);
@@ -235,6 +235,7 @@ void FSClient::process_register_response(FSHeader *header)
 
         if (ip_found == false)
         {
+            printf ("Terminating connection to %s as it is not present in new Server-IP-List\n", (*it)->peer_ip.c_str());
             delete (*it);
             it = connections.erase(it);
         }
