@@ -24,6 +24,7 @@ typedef enum
 
 // generic functions
 void hostname_to_ip(std::string hostname, std::string &ipaddress);
+void ip_to_hostname(std::string ipaddress, std::string &hostname);
 
 // class definition
 class FSConnection

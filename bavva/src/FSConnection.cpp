@@ -11,13 +11,13 @@
 // class implementation
 FSConnection::FSConnection(bool with_server, std::string hostname, int port, FSNode *fsnode):with_server(with_server), peer_port(port), fsnode(fsnode)
 {
-
     link_broken = true;
     sock_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(sock_fd < 0)
         return;
 
     hostname_to_ip(hostname, peer_ip);
+    ip_to_hostname(peer_ip, peer_name);
 
     struct sockaddr_in peer_address;                    // peer address
     memset(&peer_address, 0, sizeof(peer_address));     // zero out the structure
@@ -91,6 +91,18 @@ void hostname_to_ip(std::string hostname, std::string &ipaddress)
     }
 
     freeaddrinfo(res);
+}
+
+void ip_to_hostname(std::string ipaddress, std::string &hostname)
+{
+    struct hostent *he;
+    struct in_addr ipaddr;
+
+    inet_pton(AF_INET, ipaddress.c_str(), &ipaddr);
+    he = gethostbyaddr(&ipaddr, sizeof ipaddr, AF_INET);
+
+    if (he != NULL)
+        hostname.assign(he->h_name);
 }
 
 void FSConnection::send_message(FSMessageType msg_type, int content_length, char *buffer)
