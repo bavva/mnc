@@ -8,7 +8,7 @@
 #include "../include/FSServer.h"
 
 // class implementation
-FSServer::FSServer(int port):FSNode(port, true){}
+FSServer::FSServer(int port):FSNode(port, true),stat_wait_count(0){}
 FSServer::~FSServer()
 {
     StatisticsEntry *entry;
@@ -58,6 +58,12 @@ void FSServer::fetch_stats(void)
 {
     StatisticsEntry *entry;
 
+    if (stat_wait_count > 0)
+    {
+        printf ("Previous stats command is still being processed\n");
+        return;
+    }
+
     // delete all stuff in stats
     while (!stats.empty())
     {
@@ -78,8 +84,51 @@ void FSServer::fetch_stats(void)
         }
     }
 
-    // testing format
-    print_stats();
+    // this many stat queries have to be answered before display
+    stat_wait_count = stats.size();
+
+    // send queries
+    for (std::list<StatisticsEntry*>::iterator it = stats.begin(); it != stats.end(); it++)
+    {
+        send_fetch_stat_request((*it)->host1, (*it)->host2);
+    }
+}
+
+void FSServer::send_fetch_stat_request(std::string host1, std::string host2)
+{
+    int nchars;
+    char buffer[METADATA_SIZE];
+    char *writer = NULL;
+    FSConnection *connection = NULL;
+
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    {
+        if ((*it)->peer_name == host1)
+        {
+            connection = *it;
+            break;
+        }
+    }
+
+    // clean the buffer
+    writer = buffer;
+    memset(writer, 0, METADATA_SIZE);
+
+    // copy host1
+    nchars = host1.length();
+    strncpy(writer, host1.c_str(), nchars);
+    writer += nchars;
+
+    // add comma
+    strncpy(writer, ",", 1);
+    writer += 1;
+
+    // copy host2
+    nchars = host2.length();
+    strncpy(writer, host2.c_str(), nchars);
+    writer += nchars;
+
+    connection->send_message(MSG_TYPE_REQUEST_STATS, 0, buffer);
 }
 
 void FSServer::print_stats(void)

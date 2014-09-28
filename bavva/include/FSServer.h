@@ -13,6 +13,7 @@ class FSServer : public FSNode
 {
     private:
     std::list<StatisticsEntry*> stats;
+    int stat_wait_count;
 
     public:
     FSServer(int port);
@@ -25,5 +26,6 @@ class FSServer : public FSNode
     void process_register_request(FSHeader *header);
     void fetch_stats(void);
     void print_stats(void);
+    void send_fetch_stat_request(std::string host1, std::string host2);
 };
 #endif /* _FSSERVER_H_ */
