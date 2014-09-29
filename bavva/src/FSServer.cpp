@@ -96,6 +96,7 @@ void FSServer::fetch_stats(void)
 
 void FSServer::process_stats_response(FSHeader *header)
 {
+    char *token;
     char host1[HOSTNAME_LEN];
     char host2[HOSTNAME_LEN];
 
@@ -110,6 +111,31 @@ void FSServer::process_stats_response(FSHeader *header)
     memset(host2, 0, HOSTNAME_LEN);
 
     sscanf(header->metadata, "%s,%s,%d,%d,%ld,%ld,%ld,%ld", host1, host2, &total_downloads, &total_uploads, &total_upload_data, &total_download_data, &total_upload_time, &total_download_time);
+
+    token = strtok(header->metadata, ",");
+    if (token != NULL)
+        strcpy(host1, token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        strcpy(host2, token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        total_downloads = atoi(token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        total_uploads = atoi(token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        total_upload_data = atol(token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        total_download_data = atol(token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        total_upload_time = atol(token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        total_download_time = atol(token);
 
     for (std::list<StatisticsEntry*>::iterator it = stats.begin(); it != stats.end(); it++)
     {
@@ -126,8 +152,11 @@ void FSServer::process_stats_response(FSHeader *header)
     }
 
     stat_wait_count--;
-    if (stat_wait_count == 0)
+    if (stat_wait_count <= 0)
+    {
         print_stats();
+        stat_wait_count = 0;
+    }
 }
 
 void FSServer::send_fetch_stat_request(std::string host1, std::string host2)
