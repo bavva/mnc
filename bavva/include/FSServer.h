@@ -13,7 +13,9 @@ class FSServer : public FSNode
 {
     private:
     std::list<StatisticsEntry*> stats;
+    std::list<StatisticsEntry*>::iterator cur_entry;
     int stat_wait_count;
+    struct timeval last_stats_time;
 
     public:
     FSServer(int port);

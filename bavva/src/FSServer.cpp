@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <algorithm>
+#include <sys/time.h>
 
 #include "../include/FSServer.h"
 
@@ -56,13 +57,24 @@ void FSServer::process_register_request(FSHeader *header)
 
 void FSServer::fetch_stats(void)
 {
+    struct timeval current_time;
     StatisticsEntry *entry;
 
     if (stat_wait_count > 0)
     {
-        printf ("Previous stats command is still being processed\n");
-        return;
+        gettimeofday(&current_time, NULL);
+        if ((current_time.tv_sec - last_stats_time.tv_sec) <= 5)
+        {
+            printf ("Previous stats command is still being processed\n");
+            return;
+        }
+        else
+        {
+            print_stats();
+        }
     }
+
+    gettimeofday(&last_stats_time, NULL);
 
     // delete all stuff in stats
     while (!stats.empty())
@@ -86,12 +98,11 @@ void FSServer::fetch_stats(void)
 
     // this many stat queries have to be answered before display
     stat_wait_count = stats.size();
+    cur_entry = stats.begin();
 
-    // send queries
-    for (std::list<StatisticsEntry*>::iterator it = stats.begin(); it != stats.end(); it++)
-    {
-        send_fetch_stat_request((*it)->host1, (*it)->host2);
-    }
+    // send queries loop back 
+    if (cur_entry != stats.end())
+        send_fetch_stat_request((*cur_entry)->host1, (*cur_entry)->host2);
 }
 
 void FSServer::process_stats_response(FSHeader *header)
@@ -152,10 +163,16 @@ void FSServer::process_stats_response(FSHeader *header)
     }
 
     stat_wait_count--;
+    cur_entry++;
+
     if (stat_wait_count <= 0)
     {
         print_stats();
         stat_wait_count = 0;
+    }
+    else
+    {
+        send_fetch_stat_request((*cur_entry)->host1, (*cur_entry)->host2);
     }
 }
 
