@@ -40,6 +40,8 @@ class FSNode
     ~FSNode();
 
     // functions
+    virtual void process_stats_request(FSHeader *header);
+    virtual void process_stats_response(FSHeader *header);
     virtual void process_register_request(FSHeader *header);
     virtual void process_register_response(FSHeader *header);
     virtual void process_command(std::string args[]);

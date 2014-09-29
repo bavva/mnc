@@ -184,6 +184,14 @@ void FSConnection::process_received_message(void)
             fsnode->process_register_response(&header);
             break;
         case MSG_TYPE_REQUEST_FILE:
+            // we should put filename in header.metadata but it 
+            // is already there. so do nothing
+            break;
+        case MSG_TYPE_REQUEST_STATS:
+            fsnode->process_stats_request(&header);
+            break;
+        case MSG_TYPE_STATS_RESPONSE:
+            fsnode->process_stats_response(&header);
             break;
         case MSG_TYPE_SEND_FILE:
             fp = fopen(header.metadata, "w");
@@ -243,6 +251,13 @@ void FSConnection::on_ready_toread(void)
             if (header.message_type == MSG_TYPE_REQUEST_FILE)
             {
                 header.message_type = MSG_TYPE_SEND_FILE;
+                state = CS_WAITINGTO_WRITE;
+                start_writing();
+                return;
+            }
+            else if (header.message_type == MSG_TYPE_REQUEST_STATS)
+            {
+                header.message_type = MSG_TYPE_STATS_RESPONSE;
                 state = CS_WAITINGTO_WRITE;
                 start_writing();
                 return;
@@ -395,7 +410,7 @@ void FSConnection::on_ready_towrite(void)
         if (header_bytesleft == 0)
         {
             // these are messages with out bodies
-            if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE || header.message_type == MSG_TYPE_REQUEST_FILE || header.content_length == 0)
+            if (header.message_type == MSG_TYPE_REGISTER_REQUEST || header.message_type == MSG_TYPE_REGISTER_RESPONSE || header.content_length == 0)
             {
                 state = CS_WAITINGTO_READ;
                 start_reading();

@@ -182,6 +182,38 @@ void FSClient::process_newconnection(FSConnection *connection)
     connections.push_back(connection);
 }
 
+void FSClient::process_stats_request(FSHeader *header)
+{
+    char *token;
+    std::string host1, host2;
+    FSConnection *connection = NULL;
+
+    token = strtok(header->metadata, ",");
+    if (token != NULL)
+        host1.assign(token);
+    token = strtok(NULL, ",");
+    if (token != NULL)
+        host2.assign(token);
+
+    if (host1.empty() || host2.empty())
+        return;
+
+    for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
+    {
+        if ((*it)->peer_name == host2)
+        {
+            connection = *it;
+            break;
+        }
+    }
+
+    if (connection == NULL)
+        return;
+
+    sprintf(header->metadata, "%s,%s,%d,%d,%ld,%ld,%ld,%ld", host1.c_str(), host2.c_str(), connection->total_downloads, connection->total_uploads,
+            connection->total_upload_data, connection->total_download_data, connection->total_upload_time, connection->total_download_time);
+}
+
 void FSClient::process_register_response(FSHeader *header)
 {
     char *hostname, *ipaddress, *portstring;

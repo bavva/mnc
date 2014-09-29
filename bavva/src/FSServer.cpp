@@ -94,6 +94,42 @@ void FSServer::fetch_stats(void)
     }
 }
 
+void FSServer::process_stats_response(FSHeader *header)
+{
+    char host1[HOSTNAME_LEN];
+    char host2[HOSTNAME_LEN];
+
+    int total_downloads;
+    int total_uploads;
+    unsigned long total_upload_data;
+    unsigned long total_download_data;
+    unsigned long total_upload_time;
+    unsigned long total_download_time;
+
+    memset(host1, 0, HOSTNAME_LEN);
+    memset(host2, 0, HOSTNAME_LEN);
+
+    sscanf(header->metadata, "%s,%s,%d,%d,%ld,%ld,%ld,%ld", host1, host2, &total_downloads, &total_uploads, &total_upload_data, &total_download_data, &total_upload_time, &total_download_time);
+
+    for (std::list<StatisticsEntry*>::iterator it = stats.begin(); it != stats.end(); it++)
+    {
+        if ((*it)->host1 == host1 && (*it)->host2 == host2)
+        {
+            (*it)->total_downloads = total_downloads;
+            (*it)->total_uploads = total_uploads;
+            (*it)->total_upload_data = total_upload_data;
+            (*it)->total_download_data = total_download_data;
+            (*it)->total_upload_time = total_upload_time;
+            (*it)->total_download_time = total_download_time;
+            break;
+        }
+    }
+
+    stat_wait_count--;
+    if (stat_wait_count == 0)
+        print_stats();
+}
+
 void FSServer::send_fetch_stat_request(std::string host1, std::string host2)
 {
     int nchars;

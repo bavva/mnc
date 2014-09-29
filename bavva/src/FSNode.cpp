@@ -203,6 +203,16 @@ void FSNode::process_register_request(FSHeader *header)
     std::cout << "A request to REGISTER with us(client) is rejected\n";
 }
 
+void FSNode::process_stats_request(FSHeader *header)
+{
+    std::cout << "Only a client can process STATS request\n";
+}
+
+void FSNode::process_stats_response(FSHeader *header)
+{
+    std::cout << "Only a server can process STATS response\n";
+}
+
 void FSNode::process_register_response(FSHeader *header)
 {
     std::cout << "SERVER_IP_LIST message is applicable to client only\n";

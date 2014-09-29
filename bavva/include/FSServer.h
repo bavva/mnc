@@ -27,5 +27,6 @@ class FSServer : public FSNode
     void fetch_stats(void);
     void print_stats(void);
     void send_fetch_stat_request(std::string host1, std::string host2);
+    void process_stats_response(FSHeader *header);
 };
 #endif /* _FSSERVER_H_ */
