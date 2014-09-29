@@ -172,6 +172,14 @@ void FSServer::process_stats_response(FSHeader *header)
     }
     else
     {
+        stats_ready = true;
+    }
+}
+
+void FSServer::process_next_stat_request(void)
+{
+    if (stat_wait_count > 0)
+    {
         send_fetch_stat_request((*cur_entry)->host1, (*cur_entry)->host2);
     }
 }
@@ -182,6 +190,8 @@ void FSServer::send_fetch_stat_request(std::string host1, std::string host2)
     char buffer[METADATA_SIZE];
     char *writer = NULL;
     FSConnection *connection = NULL;
+
+    stats_ready = false;
 
     for (std::list<FSConnection*>::iterator it = connections.begin(); it != connections.end(); ++it)
     {

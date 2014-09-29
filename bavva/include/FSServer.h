@@ -14,8 +14,8 @@ class FSServer : public FSNode
     private:
     std::list<StatisticsEntry*> stats;
     std::list<StatisticsEntry*>::iterator cur_entry;
-    int stat_wait_count;
     struct timeval last_stats_time;
+    int stat_wait_count;
 
     public:
     FSServer(int port);
@@ -30,5 +30,6 @@ class FSServer : public FSNode
     void print_stats(void);
     void send_fetch_stat_request(std::string host1, std::string host2);
     void process_stats_response(FSHeader *header);
+    void process_next_stat_request(void);
 };
 #endif /* _FSSERVER_H_ */

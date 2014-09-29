@@ -35,6 +35,8 @@ class FSNode
     bool bcast_serverip_list_flag;      // flag to indicate we need to broadcast server ip list
     bool request_exit;                  // program exits (gracefully) if this flag is set
 
+    bool stats_ready;
+
     public:
     FSNode(int port, bool is_server);
     ~FSNode();
@@ -46,6 +48,7 @@ class FSNode
     virtual void process_register_response(FSHeader *header);
     virtual void process_command(std::string args[]);
     virtual void process_newconnection(FSConnection *connection);
+    virtual void process_next_stat_request(void);
 
     void start(void);
     void do_bind(void);

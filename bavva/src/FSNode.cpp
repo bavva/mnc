@@ -14,7 +14,7 @@
 static const int MAXPENDING = 5;
 
 // class implementation
-FSNode::FSNode(int port, bool is_server):port(port), is_server(is_server)
+FSNode::FSNode(int port, bool is_server):port(port), is_server(is_server), stats_ready(false)
 {
     write_here = 0;
 
@@ -217,6 +217,12 @@ void FSNode::process_register_response(FSHeader *header)
 {
     std::cout << "SERVER_IP_LIST message is applicable to client only\n";
 }
+
+void FSNode::process_next_stat_request(void)
+{
+    std::cout << "message is not applicable to client\n";
+}
+
 void FSNode::set_bcast_serverip_list_flag(void)
 {
     bcast_serverip_list_flag = true;
@@ -329,6 +335,11 @@ void FSNode::start(void)
 
         if (request_exit)
             break; // break from main loop and let all destructors do their job
+
+        if (stats_ready == true)
+        {
+            process_next_stat_request();
+        }
 
         if (bcast_serverip_list_flag)
         {
