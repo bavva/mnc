@@ -3,6 +3,7 @@
 #include <iostream>
 #include <getopt.h>
 #include <ctype.h>
+#include <string.h>
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
 
@@ -56,11 +57,58 @@ float TIMEOUT = 0.0;
 //int SND_BUFSIZE = 0; //Not applicable to ABT
 //int RCV_BUFSIZE = 0; //Not applicable to ABT
 
+/* some forward declarations */
+void tolayer3(int AorB,struct pkt packet);
+
+// A's global variables
+typedef enum
+{
+    WAIT4_PCKT0,
+    WAIT4_ACK0,
+    WAIT4_PCKT1,
+    WAIT4_ACK1
+}SenderState;
+
+SenderState A_state;
+struct pkt A_packet;
+
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
+    int i, checksum;
 
+    // do not accept message if we are waiting for ACK for previous message
+    if (A_state != WAIT4_PCKT0 && A_state != WAIT4_PCKT1)
+    {
+        printf("We are busy waiting for ACK\n");
+        return;
+    }
 
+    // copy message to packet's payload
+    memcpy(&A_packet.payload, &message.data, 20);
+
+    // copy sequence number
+    if (A_state == WAIT4_PCKT0)
+        A_packet.seqnum = 0;
+    else
+        A_packet.seqnum = 1;
+
+    // acknowledgement number is not applicable for ABT
+    A_packet.acknum = 0;
+
+    // calculate checksum and copy
+    checksum = 0;
+    checksum += A_packet.seqnum;
+    checksum += A_packet.acknum;
+    for (i = 0; i < 20; i++)
+    {
+        checksum += (int)(A_packet.payload[i]);
+    }
+    A_packet.checksum = checksum;
+
+    // finally send packet
+    tolayer3(0, A_packet);
+    A_application++;
 }
 
 void B_output(struct msg message)  /* need be completed only for extra credit */
@@ -85,6 +133,8 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
 /* entity A routines are called. You can use it to do any initialization */
 void A_init() //ram's comment - changed the return type to void.
 {
+    // initialize As state
+    A_state = WAIT4_PCKT0;
 }
 
 
