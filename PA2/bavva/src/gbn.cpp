@@ -96,10 +96,16 @@ std::list<struct pkt> A_window;
 int A_sendbase = 1;
 int A_nextseqnum = 1;
 
+// B's global variables
+int B_expectedseqnum = 1;
+struct pkt B_packet;        /* used to send ACKs */
+
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
     struct pkt packet;
+
+    A_application++;
 
     if (A_nextseqnum < A_sendbase + WINSIZE)
     {
@@ -114,6 +120,7 @@ void A_output(struct msg message) //ram's comment - students can change the retu
 
         // send the packet
         tolayer3(0, packet);
+        A_transport++;
 
         // if first packet, start timer
         if (A_sendbase == A_nextseqnum)
@@ -149,6 +156,13 @@ void A_input(struct pkt packet)
     }
 
     // packet not corrupt. proper ACK
+    // ignore if duplicate ack
+    if (packet.acknum < A_sendbase)
+    {
+        printf("At A. ignoring duplicate ACK\n");
+        return;
+    }
+
     // free ACKed packets from window
     items2free = packet.acknum + 1 - A_sendbase;
     while(items2free > 0)
@@ -179,6 +193,7 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
     for (i = A_sendbase, it = A_window.begin(); i < A_nextseqnum; i++, it++)
     {
         tolayer3(0, *it);
+        A_transport++;
     }
 }  
 
@@ -204,6 +219,41 @@ void A_init() //ram's comment - changed the return type to void.
 /* called from layer 3, when a packet arrives for layer 4 at B*/
 void B_input(struct pkt packet)
 {
+    B_transport++;
+
+    // drop corrupted packets
+    if (is_corrupt(&packet))
+    {
+        printf("At B, dropping corrupt packet\n");
+        return;
+    }
+
+    // drop out of order packets
+    if (packet.seqnum != B_expectedseqnum)
+    {
+        printf("At B, received out of order packet\n");
+
+        // re-ACK till last received
+        B_packet.acknum = B_expectedseqnum - 1;
+        B_packet.seqnum = 0;
+        B_packet.checksum = chksum(&B_packet);
+        tolayer3(1, B_packet);
+
+        return;
+    }
+
+    // inorder packet, send up
+    tolayer5(1, packet.payload);
+    B_application++;
+
+    // send ACK
+    B_packet.acknum = B_expectedseqnum;
+    B_packet.seqnum = 0;
+    B_packet.checksum = chksum(&B_packet);
+    tolayer3(1, B_packet);
+
+    // inc expected seq number
+    B_expectedseqnum++;
 }
 
 /* called when B's timer goes off */
@@ -215,6 +265,8 @@ void B_timerinterrupt() //ram's comment - changed the return type to void.
 /* entity B routines are called. You can use it to do any initialization */
 void B_init() //ram's comment - changed the return type to void.
 {
+    // initialize expected seqnum
+    B_expectedseqnum = 1;
 }
 
 int TRACE = 1;             /* for my debugging */
