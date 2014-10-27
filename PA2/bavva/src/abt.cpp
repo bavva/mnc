@@ -199,6 +199,7 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
 
     // send packet again
     tolayer3(0, A_packet);
+    A_transport++;
 
     // start timer again
     starttimer(0, TIMEOUT);
@@ -212,7 +213,7 @@ void A_init() //ram's comment - changed the return type to void.
     A_state = WAIT4_PCKT0;
 
     // initialize timeout
-    TIMEOUT = 10.0;
+    TIMEOUT = 30.0;
 }
 
 
