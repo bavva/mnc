@@ -56,6 +56,33 @@ int WINSIZE;         //This is supplied as cmd-line parameter; You will need to 
 int SND_BUFSIZE = 0; //Sender's Buffer size
 int RCV_BUFSIZE = 0; //Receiver's Buffer size
 
+// helper functions
+int chksum(struct pkt *packet)
+{
+    int i, checksum;
+
+    if (packet == NULL)
+        return 0;
+
+    checksum = 0;
+    checksum += packet->seqnum;
+    checksum += packet->acknum;
+    for (i = 0; i < 20; i++)
+    {
+        checksum += (int)(packet->payload[i]);
+    }
+
+    return checksum;
+}
+
+bool is_corrupt(struct pkt *packet)
+{
+    if (packet == NULL)
+        return false;
+
+    return (chksum(packet) != packet->checksum);
+}
+
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
@@ -85,6 +112,12 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
 /* entity A routines are called. You can use it to do any initialization */
 void A_init() //ram's comment - changed the return type to void.
 {
+    // initialize timeout
+    TIMEOUT = 30.0;
+
+    // set SND_BUFSIZE and RCV_BUFSIZE
+    SND_BUFSIZE = WINSIZE * sizeof(struct msg);
+    RCV_BUFSIZE = WINSIZE * sizeof(struct msg);
 }
 
 

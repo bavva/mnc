@@ -63,6 +63,33 @@ void tolayer5(int AorB,char *datasent);
 void starttimer(int AorB,float increment);
 void stoptimer(int AorB);
 
+// helper functions
+int chksum(struct pkt *packet)
+{
+    int i, checksum;
+
+    if (packet == NULL)
+        return 0;
+
+    checksum = 0;
+    checksum += packet->seqnum;
+    checksum += packet->acknum;
+    for (i = 0; i < 20; i++)
+    {
+        checksum += (int)(packet->payload[i]);
+    }
+
+    return checksum;
+}
+
+bool is_corrupt(struct pkt *packet)
+{
+    if (packet == NULL)
+        return false;
+
+    return (chksum(packet) != packet->checksum);
+}
+
 // A's global variables
 typedef enum
 {
@@ -88,8 +115,6 @@ struct pkt B_packet;
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
-    int i, checksum;
-
     // increment stats
     A_application++;
 
@@ -113,14 +138,7 @@ void A_output(struct msg message) //ram's comment - students can change the retu
     A_packet.acknum = 0;
 
     // calculate checksum and copy
-    checksum = 0;
-    checksum += A_packet.seqnum;
-    checksum += A_packet.acknum;
-    for (i = 0; i < 20; i++)
-    {
-        checksum += (int)(A_packet.payload[i]);
-    }
-    A_packet.checksum = checksum;
+    A_packet.checksum = chksum(&A_packet);
 
     // finally send packet
     tolayer3(0, A_packet);
@@ -145,18 +163,7 @@ void B_output(struct msg message)  /* need be completed only for extra credit */
 /* called from layer 3, when a packet arrives for layer 4 */
 void A_input(struct pkt packet)
 {
-    int i, checksum;
-
-    // validate checksum first
-    checksum = 0;
-    checksum += packet.seqnum;
-    checksum += packet.acknum;
-    for (i = 0; i < 20; i++)
-    {
-        checksum += (int)(packet.payload[i]);
-    }
-
-    if(checksum != packet.checksum)
+    if(is_corrupt(&packet))
     {
         printf("At A, corrupt packet dropped\n");
         return;
@@ -222,21 +229,10 @@ void A_init() //ram's comment - changed the return type to void.
 /* called from layer 3, when a packet arrives for layer 4 at B*/
 void B_input(struct pkt packet)
 {
-    int i, checksum;
-
     // increment stats
     B_transport++;
 
-    // validate checksum first
-    checksum = 0;
-    checksum += packet.seqnum;
-    checksum += packet.acknum;
-    for (i = 0; i < 20; i++)
-    {
-        checksum += (int)(packet.payload[i]);
-    }
-
-    if(checksum != packet.checksum)
+    if(is_corrupt(&packet))
     {
         printf("At B, got corrupt packet. Will ACK previous packet\n");
         if (B_state == WAIT4_PACKET0)
@@ -265,14 +261,7 @@ void B_input(struct pkt packet)
     B_packet.seqnum = 0;
 
     // calculate checksum
-    checksum = 0;
-    checksum += B_packet.seqnum;
-    checksum += B_packet.acknum;
-    for (i = 0; i < 20; i++)
-    {
-        checksum += (int)(B_packet.payload[i]);
-    }
-    B_packet.checksum = checksum;
+    B_packet.checksum = chksum(&B_packet);
 
     // send the ACK
     tolayer3(1, B_packet);
