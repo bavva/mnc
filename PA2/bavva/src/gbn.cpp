@@ -3,6 +3,8 @@
 #include <iostream>
 #include <getopt.h>
 #include <ctype.h>
+#include <string.h>
+#include <list>
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
 
@@ -35,6 +37,12 @@ struct pkt {
    int checksum;
    char payload[20];
     };
+
+/* some forward declarations */
+void tolayer3(int AorB,struct pkt packet);
+void tolayer5(int AorB,char *datasent);
+void starttimer(int AorB,float increment);
+void stoptimer(int AorB);
 
 /********* STUDENTS WRITE THE NEXT SEVEN ROUTINES *********/
 
@@ -83,11 +91,43 @@ bool is_corrupt(struct pkt *packet)
     return (chksum(packet) != packet->checksum);
 }
 
+// A's global variables
+std::list<struct pkt> A_window;
+int A_sendbase = 1;
+int A_nextseqnum = 1;
+
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
+    struct pkt packet;
 
+    if (A_nextseqnum < A_sendbase + WINSIZE)
+    {
+        // populate packet fields
+        packet.seqnum = A_nextseqnum;
+        packet.acknum = 0;
+        memcpy(packet.payload, message.data, 20);
+        packet.checksum = chksum(&packet);
 
+        // add packet to window
+        A_window.push_back(packet);
+
+        // send the packet
+        tolayer3(0, packet);
+
+        // if first packet, start timer
+        if (A_sendbase == A_nextseqnum)
+        {
+            starttimer(0, TIMEOUT);
+        }
+
+        // increment seq number
+        A_nextseqnum++;
+    }
+    else
+    {
+        printf("At A, window full, so refusing data\n");
+    }
 }
 
 void B_output(struct msg message)  /* need be completed only for extra credit */
@@ -99,13 +139,47 @@ void B_output(struct msg message)  /* need be completed only for extra credit */
 /* called from layer 3, when a packet arrives for layer 4 */
 void A_input(struct pkt packet)
 {
+    int items2free;
 
+    // simply drop corrupt packets
+    if (is_corrupt(&packet))
+    {
+        printf("At A, dropping corrupt packet\n");
+        return;
+    }
+
+    // packet not corrupt. proper ACK
+    // free ACKed packets from window
+    items2free = packet.acknum + 1 - A_sendbase;
+    while(items2free > 0)
+    {
+        A_window.pop_front();
+        items2free--;
+    }
+
+    // update base value
+    A_sendbase = packet.acknum + 1;
+
+    // stop timer if there is nothing in window
+    if (A_sendbase == A_nextseqnum)
+        stoptimer(0);
 }
 
 /* called when A's timer goes off */
 void A_timerinterrupt() //ram's comment - changed the return type to void.
 {
+    int i;
+    std::list<struct pkt>::iterator it;
 
+    // timer interrupted because there are UnACKed packets
+    // restart timer
+    starttimer(0, TIMEOUT);
+
+    // resend all packets in window
+    for (i = A_sendbase, it = A_window.begin(); i < A_nextseqnum; i++, it++)
+    {
+        tolayer3(0, *it);
+    }
 }  
 
 /* the following routine will be called once (only) before any other */
@@ -118,6 +192,10 @@ void A_init() //ram's comment - changed the return type to void.
     // set SND_BUFSIZE and RCV_BUFSIZE
     SND_BUFSIZE = WINSIZE * sizeof(struct msg);
     RCV_BUFSIZE = WINSIZE * sizeof(struct msg);
+
+    // initialize sendbase and nextseqnum
+    A_sendbase = 1;
+    A_nextseqnum = 1;
 }
 
 

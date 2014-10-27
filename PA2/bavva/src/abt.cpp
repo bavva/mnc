@@ -126,7 +126,7 @@ void A_output(struct msg message) //ram's comment - students can change the retu
     }
 
     // copy message to packet's payload
-    memcpy(&A_packet.payload, &message.data, 20);
+    memcpy(A_packet.payload, message.data, 20);
 
     // copy sequence number
     if (A_state == WAIT4_PCKT0)
