@@ -59,6 +59,9 @@ float TIMEOUT = 0.0;
 
 /* some forward declarations */
 void tolayer3(int AorB,struct pkt packet);
+void tolayer5(int AorB,char *datasent);
+void starttimer(int AorB,float increment);
+void stoptimer(int AorB);
 
 // A's global variables
 typedef enum
@@ -77,10 +80,13 @@ void A_output(struct msg message) //ram's comment - students can change the retu
 {
     int i, checksum;
 
+    // increment stats
+    A_application++;
+
     // do not accept message if we are waiting for ACK for previous message
     if (A_state != WAIT4_PCKT0 && A_state != WAIT4_PCKT1)
     {
-        printf("We are busy waiting for ACK\n");
+        printf("At A, dropping packet as busy waiting for ACK\n");
         return;
     }
 
@@ -108,7 +114,16 @@ void A_output(struct msg message) //ram's comment - students can change the retu
 
     // finally send packet
     tolayer3(0, A_packet);
-    A_application++;
+    A_transport++;
+
+    // now start timer
+    starttimer(0, TIMEOUT);
+
+    // change state to waiting for ACK
+    if (A_state == WAIT4_PCKT0)
+        A_state = WAIT4_ACK0;
+    else
+        A_state = WAIT4_ACK1;
 }
 
 void B_output(struct msg message)  /* need be completed only for extra credit */
@@ -120,13 +135,63 @@ void B_output(struct msg message)  /* need be completed only for extra credit */
 /* called from layer 3, when a packet arrives for layer 4 */
 void A_input(struct pkt packet)
 {
+    int i, checksum;
 
+    // validate checksum first
+    checksum = 0;
+    checksum += packet.seqnum;
+    checksum += packet.acknum;
+    for (i = 0; i < 20; i++)
+    {
+        checksum += (int)(packet.payload[i]);
+    }
+
+    if(checksum != packet.checksum)
+    {
+        printf("At A, corrupt packet dropped\n");
+        return;
+    }
+
+    // note that all input packets are ACKs for us
+    if (A_state == WAIT4_PCKT0 || A_state == WAIT4_PCKT1)
+    {
+        printf("At A, didn't expect ACK. so dropped\n");
+        return;
+    }
+
+    // if ACK is for previous packet, ignore
+    if ((A_state == WAIT4_ACK0 && packet.acknum != 0) || (A_state == WAIT4_ACK1 && packet.acknum != 1))
+    {
+        printf("At A, ignoring duplicate ACK\n");
+        return;
+    }
+
+    // now stop timer
+    stoptimer(0);
+
+    // process ACK
+    if (A_state == WAIT4_ACK0)
+        A_state = WAIT4_PCKT1;
+    else
+        A_state = WAIT4_PCKT0;
 }
 
 /* called when A's timer goes off */
 void A_timerinterrupt() //ram's comment - changed the return type to void.
 {
+    // we only process timeout if we are in 
+    // WAITING4_ACK state
+    if (A_state != WAIT4_ACK0 && A_state != WAIT4_ACK1)
+    {
+        printf ("At A, timeout occurred in unexpected state\n");
+        return;
+    }
 
+    // send packet again
+    tolayer3(0, A_packet);
+
+    // start timer again
+    starttimer(0, TIMEOUT);
 }  
 
 /* the following routine will be called once (only) before any other */
@@ -135,6 +200,9 @@ void A_init() //ram's comment - changed the return type to void.
 {
     // initialize As state
     A_state = WAIT4_PCKT0;
+
+    // initialize timeout
+    TIMEOUT = 10.0;
 }
 
 
