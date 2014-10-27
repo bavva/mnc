@@ -75,6 +75,16 @@ typedef enum
 SenderState A_state;
 struct pkt A_packet;
 
+// B's global variables
+typedef enum
+{
+    WAIT4_PACKET0,
+    WAIT4_PACKET1
+}ReceiverState;
+
+ReceiverState B_state;
+struct pkt B_packet;
+
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
@@ -211,6 +221,60 @@ void A_init() //ram's comment - changed the return type to void.
 /* called from layer 3, when a packet arrives for layer 4 at B*/
 void B_input(struct pkt packet)
 {
+    int i, checksum;
+
+    // increment stats
+    B_transport++;
+
+    // validate checksum first
+    checksum = 0;
+    checksum += packet.seqnum;
+    checksum += packet.acknum;
+    for (i = 0; i < 20; i++)
+    {
+        checksum += (int)(packet.payload[i]);
+    }
+
+    if(checksum != packet.checksum)
+    {
+        printf("At B, got corrupt packet. Will ACK previous packet\n");
+        if (B_state == WAIT4_PACKET0)
+            B_packet.acknum = 1;
+        else
+            B_packet.acknum = 0;
+    }
+    else
+    {
+        B_packet.acknum = packet.seqnum;
+    }
+
+    // deliver payload if it is expecting packet
+    if ((B_state == WAIT4_PACKET0 && packet.seqnum == 0) || (B_state == WAIT4_PACKET1 && packet.seqnum == 1))
+    {
+        tolayer5(1, packet.payload);
+        B_application++;
+
+        if (B_state == WAIT4_PACKET0)
+            B_state = WAIT4_PACKET1;
+        else
+            B_state = WAIT4_PACKET0;
+    }
+
+    // sequence number is not applicable for ACKs
+    B_packet.seqnum = 0;
+
+    // calculate checksum
+    checksum = 0;
+    checksum += B_packet.seqnum;
+    checksum += B_packet.acknum;
+    for (i = 0; i < 20; i++)
+    {
+        checksum += (int)(B_packet.payload[i]);
+    }
+    B_packet.checksum = checksum;
+
+    // send the ACK
+    tolayer3(1, B_packet);
 }
 
 /* called when B's timer goes off */
@@ -222,6 +286,8 @@ void B_timerinterrupt() //ram's comment - changed the return type to void.
 /* entity B routines are called. You can use it to do any initialization */
 void B_init() //ram's comment - changed the return type to void.
 {
+    // initialize state
+    B_state = WAIT4_PACKET0;
 }
 
 int TRACE = 1;             /* for my debugging */
