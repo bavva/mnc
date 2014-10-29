@@ -5,8 +5,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <list>
-#include <queue>
-#include <functional>
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
 
@@ -100,18 +98,9 @@ class alarm_node
     ~alarm_node(){}
 };
 
-class CompareAlarmNodes : public std::binary_function<alarm_node*, alarm_node*, bool>
-{
-    public:
-    bool operator()(const alarm_node *lhs, const alarm_node *rhs)
-    {
-        return (lhs->time < rhs->time);
-    }
-};
-
 bool timer_running = false;
 float current_time = 0.0;
-std::priority_queue<alarm_node*, std::vector<alarm_node*>, CompareAlarmNodes> alarms;
+std::list<alarm_node*> alarms;
 
 /************ SR Code *******************/
 // A's global variables
@@ -139,11 +128,11 @@ void A_input(struct pkt packet)
 {
 }
 
-/* add alarm with timeout for packet with seqnum */
-void A_addalarm(int seqnum, float timeout)
+/* add alarm for packet with seqnum */
+void A_addalarm(int seqnum)
 {
     // add entry to queue
-    alarms.push(new alarm_node(seqnum, current_time + timeout));
+    alarms.push_back(new alarm_node(seqnum, current_time + TIMEOUT));
 
     // start main timer if not running
     if (!timer_running)
@@ -169,13 +158,15 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
     // check if any packets need to be processed
     while(!alarms.empty())
     {
-        top_node = alarms.top();
+        top_node = alarms.front();
         if (top_node->time <= current_time)
         {
             A_packettimeout(top_node->seqnum);
 
             delete top_node;
-            alarms.pop();
+            alarms.pop_front();
+
+            continue;
         }
 
         break;
