@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include <string.h>
 #include <list>
+#include <queue>
+#include <functional>
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
 
@@ -87,6 +89,31 @@ bool is_corrupt(struct pkt *packet)
     return (chksum(packet) != packet->checksum);
 }
 
+/************ Alarm Code ****************/
+class alarm_node
+{
+    public:
+    int seqnum;
+    float time;
+
+    alarm_node(int seqnum, float time):seqnum(seqnum), time(time){}
+    ~alarm_node(){}
+};
+
+class CompareAlarmNodes : public std::binary_function<alarm_node*, alarm_node*, bool>
+{
+    public:
+    bool operator()(const alarm_node *lhs, const alarm_node *rhs)
+    {
+        return (lhs->time < rhs->time);
+    }
+};
+
+bool timer_running = false;
+float current_time = 0.0;
+std::priority_queue<alarm_node*, std::vector<alarm_node*>, CompareAlarmNodes> alarms;
+
+/************ SR Code *******************/
 // A's global variables
 std::list<struct pkt> A_window;
 int A_sendbase = 1;
@@ -112,9 +139,55 @@ void A_input(struct pkt packet)
 {
 }
 
+/* add alarm with timeout for packet with seqnum */
+void A_addalarm(int seqnum, float timeout)
+{
+    // add entry to queue
+    alarms.push(new alarm_node(seqnum, current_time + timeout));
+
+    // start main timer if not running
+    if (!timer_running)
+    {
+        starttimer(0, 1.0);
+        timer_running = true;
+    }
+}
+
+/* packet with seqnum timedout */
+void A_packettimeout(int seqnum)
+{
+}
+
 /* called when A's timer goes off */
 void A_timerinterrupt() //ram's comment - changed the return type to void.
 {
+    alarm_node *top_node = NULL;
+
+    // increment current time
+    current_time += 1.0;
+
+    // check if any packets need to be processed
+    while(!alarms.empty())
+    {
+        top_node = alarms.top();
+        if (top_node->time <= current_time)
+        {
+            A_packettimeout(top_node->seqnum);
+
+            delete top_node;
+            alarms.pop();
+        }
+
+        break;
+    }
+
+    // if no alarms, stop main timer
+    if (alarms.empty())
+    {
+        stoptimer(0);
+        current_time = 0.0;
+        timer_running = false;
+    }
 }  
 
 /* the following routine will be called once (only) before any other */
