@@ -3,6 +3,8 @@
 #include <iostream>
 #include <getopt.h>
 #include <ctype.h>
+#include <string.h>
+#include <list>
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
 
@@ -36,6 +38,12 @@ struct pkt {
    char payload[20];
     };
 
+/* some forward declarations */
+void tolayer3(int AorB,struct pkt packet);
+void tolayer5(int AorB,char *datasent);
+void starttimer(int AorB,float increment);
+void stoptimer(int AorB);
+
 /********* STUDENTS WRITE THE NEXT SEVEN ROUTINES *********/
 
 /* Statistics 
@@ -56,29 +64,57 @@ int WINSIZE;         //This is supplied as cmd-line parameter; You will need to 
 int SND_BUFSIZE = 0; //Sender's Buffer size
 int RCV_BUFSIZE = 0; //Receiver's Buffer size
 
+// helper functions
+int chksum(struct pkt *packet)
+{
+    int i, checksum;
+    if (packet == NULL)
+        return 0;
+    checksum = 0;
+    checksum += packet->seqnum;
+    checksum += packet->acknum;
+    for (i = 0; i < 20; i++)
+    {
+        checksum += (int)(packet->payload[i]);
+    }
+    return checksum;
+}
+
+bool is_corrupt(struct pkt *packet)
+{
+    if (packet == NULL)
+        return false;
+    return (chksum(packet) != packet->checksum);
+}
+
+// A's global variables
+std::list<struct pkt> A_window;
+int A_sendbase = 1;
+int A_nextseqnum = 1;
+
+// B's global variables
+std::list<struct pkt> B_window;
+int B_recvbase = 1;
+int B_nextseqnum = 1;
+
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
-
-
 }
 
 void B_output(struct msg message)  /* need be completed only for extra credit */
 // ram's comment - students can change the return type of this function from struct to pointers if needed  
 {
-
 }
 
 /* called from layer 3, when a packet arrives for layer 4 */
 void A_input(struct pkt packet)
 {
-
 }
 
 /* called when A's timer goes off */
 void A_timerinterrupt() //ram's comment - changed the return type to void.
 {
-
 }  
 
 /* the following routine will be called once (only) before any other */
