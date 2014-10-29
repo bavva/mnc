@@ -234,8 +234,8 @@ void A_addalarm(int seqnum)
     // start main timer if not running
     if (!timer_running)
     {
-        starttimer(0, 1.0);
         timer_running = true;
+        starttimer(0, 5.0);
     }
 }
 
@@ -253,11 +253,11 @@ void A_removealarm(int seqnum)
     }
 
     // if not alarms, stop main timer
-    if (alarms.empty())
+    if (alarms.empty() && timer_running == true)
     {
-        stoptimer(0);
-        current_time = 0.0;
         timer_running = false;
+        current_time = 0.0;
+        stoptimer(0);
     }
 }
 
@@ -309,11 +309,11 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
     }
 
     // if no alarms, stop main timer
-    if (alarms.empty())
+    if (alarms.empty() && timer_running == true)
     {
-        stoptimer(0);
-        current_time = 0.0;
         timer_running = false;
+        current_time = 0.0;
+        stoptimer(0);
     }
 }  
 
@@ -376,6 +376,7 @@ void B_input(struct pkt packet)
             tolayer5(1, packet.payload);
             B_application++;
             B_window.pop();
+            B_recvbase++;
         }
         else
         {
