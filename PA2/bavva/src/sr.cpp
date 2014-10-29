@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <list>
+#include <queue>
 /* ******************************************************************
  ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
 
@@ -43,6 +44,10 @@ void tolayer3(int AorB,struct pkt packet);
 void tolayer5(int AorB,char *datasent);
 void starttimer(int AorB,float increment);
 void stoptimer(int AorB);
+
+void A_addalarm(int seqnum);
+void A_removealarm(int seqnum);
+void A_packettimeout(int seqnum);
 
 /********* STUDENTS WRITE THE NEXT SEVEN ROUTINES *********/
 
@@ -116,6 +121,39 @@ int B_nextseqnum = 1;
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
 {
+    struct pkt packet;
+
+    A_application++;
+
+    if (A_nextseqnum < A_sendbase + WINSIZE)
+    {
+        // populate packet fields
+        packet.seqnum = A_nextseqnum;
+
+        // This is one way communication. acknum fields are not required
+        // use acknum fields to know if we received ACK for this packet
+        // 0 means not received. 1 means received
+        packet.acknum = 0;
+        memcpy(packet.payload, message.data, 20);
+        packet.checksum = chksum(&packet);
+
+        // add packet to window
+        A_window.push_back(packet);
+
+        // send the packet
+        tolayer3(0, packet);
+        A_transport++;
+
+        // we run timer for every packet
+        A_addalarm(packet.seqnum);
+
+        // increment seq number
+        A_nextseqnum++;
+    }
+    else
+    {
+        printf("At A, window full, so refusing data\n");
+    }
 }
 
 void B_output(struct msg message)  /* need be completed only for extra credit */
@@ -126,6 +164,55 @@ void B_output(struct msg message)  /* need be completed only for extra credit */
 /* called from layer 3, when a packet arrives for layer 4 */
 void A_input(struct pkt packet)
 {
+    struct pkt *windowentry = NULL;
+
+    // simply drop corrupt packets
+    if (is_corrupt(&packet))
+    {
+        printf("At A, dropping corrupt packet\n");
+        return;
+    }
+
+    // ACK for some very old packet
+    if (packet.acknum < A_sendbase)
+    {
+        printf("At A. ignoring duplicate ACK for an old packet\n");
+        return;
+    }
+
+    // packet not corrupt. proper ACK
+    // if not duplicate ACK, stop timer
+    for (std::list<struct pkt>::iterator it = A_window.begin(); it != A_window.end(); it++)
+    {
+        windowentry = &(*it);
+
+        if (windowentry->seqnum == packet.acknum) // entry corresponding to ACK
+        {
+            if (windowentry->acknum == 0) // previously not ACKed
+            {
+                windowentry->acknum = 1;
+                A_removealarm(packet.acknum); // stop timer for this packet
+            }
+
+            break;
+        }
+    }
+
+    // free ACKed packets from window
+    while (!A_window.empty())
+    {
+        struct pkt frontitem = A_window.front();
+
+        if (frontitem.acknum == 1)
+        {
+            A_window.pop_front();
+            A_sendbase++; // increase send base
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 /* add alarm for packet with seqnum */
@@ -167,6 +254,23 @@ void A_removealarm(int seqnum)
 /* packet with seqnum timedout */
 void A_packettimeout(int seqnum)
 {
+    struct pkt *windowentry = NULL;
+
+    // retransmit that packet
+    for (std::list<struct pkt>::iterator it = A_window.begin(); it != A_window.end(); it++)
+    {
+        windowentry = &(*it);
+
+        if (windowentry->seqnum == seqnum) // entry corresponding to seqnum
+        {
+            // retransmit and restart timer
+            tolayer3(0, *windowentry);
+            A_transport++;
+            A_addalarm(windowentry->seqnum);
+            
+            break;
+        }
+    }
 }
 
 /* called when A's timer goes off */
@@ -207,6 +311,16 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
 /* entity A routines are called. You can use it to do any initialization */
 void A_init() //ram's comment - changed the return type to void.
 {
+    // initialize timeout
+    TIMEOUT = 30.0;
+
+    // set SND_BUFSIZE and RCV_BUFSIZE
+    SND_BUFSIZE = WINSIZE * sizeof(struct msg);
+    RCV_BUFSIZE = WINSIZE * sizeof(struct msg);
+
+    // initialize sendbase and nextseqnum
+    A_sendbase = 1;
+    A_nextseqnum = 1;
 }
 
 
