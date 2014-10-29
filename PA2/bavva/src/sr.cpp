@@ -142,6 +142,28 @@ void A_addalarm(int seqnum)
     }
 }
 
+/* stop alarm for packet with seqnum */
+void A_removealarm(int seqnum)
+{
+    for (std::list<alarm_node*>::iterator it = alarms.begin(); it != alarms.end(); it++)
+    {
+        if ((*it)->seqnum == seqnum)
+        {
+            delete *it;
+            alarms.erase(it);
+            break;
+        }
+    }
+
+    // if not alarms, stop main timer
+    if (alarms.empty())
+    {
+        stoptimer(0);
+        current_time = 0.0;
+        timer_running = false;
+    }
+}
+
 /* packet with seqnum timedout */
 void A_packettimeout(int seqnum)
 {
