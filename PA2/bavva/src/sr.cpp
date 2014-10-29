@@ -21,6 +21,7 @@
 
 #define BIDIRECTIONAL 0    /* change to 1 if you're doing extra credit */
                            /* and write a routine called B_output */
+#define TIMER_INC   5.0
 
 /* a "msg" is the data unit passed from layer 5 (teachers code) to layer  */
 /* 4 (students' code).  It contains the data (characters) to be delivered */
@@ -235,7 +236,7 @@ void A_addalarm(int seqnum)
     if (!timer_running)
     {
         timer_running = true;
-        starttimer(0, 20.0);
+        starttimer(0, TIMER_INC);
     }
 }
 
@@ -289,7 +290,7 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
     alarm_node *top_node = NULL;
 
     // increment current time
-    current_time += 1.0;
+    current_time += TIMER_INC;
 
     // check if any packets need to be processed
     while(!alarms.empty())
@@ -309,11 +310,14 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
     }
 
     // if no alarms, stop main timer
-    if (alarms.empty() && timer_running == true)
+    if (alarms.empty())
     {
-        stoptimer(0);
         timer_running = false;
         current_time = 0.0;
+    }
+    else
+    {
+        starttimer(0, TIMER_INC);
     }
 }  
 
@@ -322,7 +326,7 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
 void A_init() //ram's comment - changed the return type to void.
 {
     // initialize timeout
-    TIMEOUT = 60.0;
+    TIMEOUT = 30.0;
 
     // set SND_BUFSIZE and RCV_BUFSIZE
     SND_BUFSIZE = WINSIZE * sizeof(struct msg);
@@ -351,15 +355,11 @@ void B_input(struct pkt packet)
     }
 
     // a packet has to be in receiver window
-    if (packet.seqnum < B_recvbase || packet.seqnum >= (B_recvbase + WINSIZE))
+    if (packet.seqnum >= (B_recvbase + WINSIZE))
     {
         printf("At B, dropping out of window packet\n");
         return;
     }
-
-    // packet with in window
-    // put it in priority queue
-    B_window.push(packet);
 
     // send ACK
     B_packet.acknum = packet.seqnum;
@@ -367,11 +367,26 @@ void B_input(struct pkt packet)
     B_packet.checksum = chksum(&B_packet);
     tolayer3(1, B_packet);
 
+    // if packet is old, send ACK so that sender can move forward
+    if (packet.seqnum < B_recvbase)
+    {
+        printf("At B, received very old packet\n");
+        return;
+    }
+
+    // packet with in window
+    // put it in priority queue
+    B_window.push(packet);
+
     // if inorder packets available, deliver up
     while (!B_window.empty())
     {
         toppacket = B_window.top();
-        if (toppacket.seqnum == B_recvbase)
+        if (toppacket.seqnum < B_recvbase) // this is re transmission. drop it
+        {
+            B_window.pop();
+        }
+        else if (toppacket.seqnum == B_recvbase)
         {
             tolayer5(1, packet.payload);
             B_application++;
