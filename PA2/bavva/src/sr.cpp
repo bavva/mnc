@@ -114,9 +114,19 @@ int A_sendbase = 1;
 int A_nextseqnum = 1;
 
 // B's global variables
-std::list<struct pkt> B_window;
+
+class PacketCompare: public std::binary_function<struct pkt, struct pkt, bool>
+{
+    public:
+    bool operator()(const struct pkt lhs, const struct pkt rhs)
+    {
+        return (lhs.seqnum > rhs.seqnum);
+    }
+};
+
+std::priority_queue<struct pkt, std::vector<struct pkt>, PacketCompare> B_window;
 int B_recvbase = 1;
-int B_nextseqnum = 1;
+struct pkt B_packet;
 
 /* called from layer 5, passed the data to be sent to other side */
 void A_output(struct msg message) //ram's comment - students can change the return type of the function from struct to pointers if necessary
@@ -329,6 +339,49 @@ void A_init() //ram's comment - changed the return type to void.
 /* called from layer 3, when a packet arrives for layer 4 at B*/
 void B_input(struct pkt packet)
 {
+    struct pkt toppacket;
+
+    B_transport++;
+
+    // drop corrupted packets
+    if (is_corrupt(&packet))
+    {
+        printf("At B, dropping corrupt packet\n");
+        return;
+    }
+
+    // a packet has to be in receiver window
+    if (packet.seqnum < B_recvbase || packet.seqnum >= (B_recvbase + WINSIZE))
+    {
+        printf("At B, dropping out of window packet\n");
+        return;
+    }
+
+    // packet with in window
+    // put it in priority queue
+    B_window.push(packet);
+
+    // send ACK
+    B_packet.acknum = packet.seqnum;
+    B_packet.seqnum = 0;
+    B_packet.checksum = chksum(&B_packet);
+    tolayer3(1, B_packet);
+
+    // if inorder packets available, deliver up
+    while (!B_window.empty())
+    {
+        toppacket = B_window.top();
+        if (toppacket.seqnum == B_recvbase)
+        {
+            tolayer5(1, packet.payload);
+            B_application++;
+            B_window.pop();
+        }
+        else
+        {
+            break;
+        }
+    }
 }
 
 /* called when B's timer goes off */
@@ -340,6 +393,8 @@ void B_timerinterrupt() //ram's comment - changed the return type to void.
 /* entity B routines are called. You can use it to do any initialization */
 void B_init() //ram's comment - changed the return type to void.
 {
+    // initialize recv base
+    B_recvbase = 1;
 }
 
 int TRACE = 1;             /* for my debugging */
