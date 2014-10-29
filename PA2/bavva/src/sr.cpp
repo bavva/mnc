@@ -103,7 +103,7 @@ class alarm_node
     ~alarm_node(){}
 };
 
-bool timer_running = false;
+volatile bool timer_running = false;
 float current_time = 0.0;
 std::list<alarm_node*> alarms;
 
@@ -235,7 +235,7 @@ void A_addalarm(int seqnum)
     if (!timer_running)
     {
         timer_running = true;
-        starttimer(0, 5.0);
+        starttimer(0, 20.0);
     }
 }
 
@@ -255,9 +255,9 @@ void A_removealarm(int seqnum)
     // if not alarms, stop main timer
     if (alarms.empty() && timer_running == true)
     {
+        stoptimer(0);
         timer_running = false;
         current_time = 0.0;
-        stoptimer(0);
     }
 }
 
@@ -311,9 +311,9 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
     // if no alarms, stop main timer
     if (alarms.empty() && timer_running == true)
     {
+        stoptimer(0);
         timer_running = false;
         current_time = 0.0;
-        stoptimer(0);
     }
 }  
 
@@ -322,7 +322,7 @@ void A_timerinterrupt() //ram's comment - changed the return type to void.
 void A_init() //ram's comment - changed the return type to void.
 {
     // initialize timeout
-    TIMEOUT = 30.0;
+    TIMEOUT = 60.0;
 
     // set SND_BUFSIZE and RCV_BUFSIZE
     SND_BUFSIZE = WINSIZE * sizeof(struct msg);
