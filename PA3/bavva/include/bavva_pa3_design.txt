@@ -1,0 +1,88 @@
+// Server represents a node in the network
+class Server
+{
+    std::string server_ip;      // ip address of the server
+    unsigned short server_port; // port of the server
+    unsigned short server_cost; // cost from us to this server
+    unsigned server_id;         // ID of the server
+    bool is_neighbor;           // whether this server is our neighbor
+};
+
+// RoutingTable holds required information to take routing decisions
+class RoutingTable
+{
+    unsigned num_servers;           // number of total nodes in the networks
+    unsigned short **routing_costs; // 2-D array of costs. routing_costs[x][y] means cost to send packet from x to y
+    unsigned *routing_via;          // routing_via[x] means next hop neighbor if we want to send packet to x
+};
+
+// Timer represents one logical timer
+class Timer
+{
+    unsigned server_id; // ID of server corresponding to this timer
+    time_t timer_time;  // time at which the timer should fire
+};
+
+// Configuration hold information about current node and pointers to other data structures
+class Configuration
+{
+    unsigned num_servers;                   // total number of servers
+    unsigned num_neighbors;                 // number of neighbors to current node
+
+    std::string my_ip;                      // ip address of current node
+    unsigned short my_port;                 // port number of current node
+    unsigned my_id;                         // ID of current node
+
+    std::map<unsigned, Server*> servers;    // pointers to all Servers
+    RoutingTable *routing_table;            // pointer to routing table
+
+    std::priority_queue<Timer*> timers;     // we use priority queue so that timers are sorted based on time at which timer has to fire
+};
+
+// Packet represents the message which server exchange. There will be a helper api that reads this structure and serializes
+// it such that it can be sent on network. similarly we will have another api that does deserialization
+class Packet
+{
+    unsigned num_entries;           // total number of entries
+    std::list<Server*> servers;     // pointers to all the servers that have to be included in this packet
+};
+
+// main loop
+while(true)
+{
+    ret = select(fds, timeout);
+
+    if (ret == TIMEOUT_ERROR)
+    {
+        // fire all timers whose alarm time is less than
+        // or equal to the current time
+        process_timers(&(this->configuration.timers));
+    }
+    else if(FD_ISSET(command_line_input))
+    {
+        // read command line input and process the command
+        process_command_line_input();
+    }
+    else
+    {
+        // get packets, update routing table and if something
+        // changes, send updated info to all neighbors
+        recv_n_process_packet();
+    }
+}
+
+// multiple timer logic
+void timer_interrupt(std::priority_queue<Timer*> timers)
+{
+    while(!timers.empty())
+    {
+        // logical timers are sorted based on firing time
+        if (timers.top.timer_time <= current_time)
+        {
+            process_logical_timer(timers.top);
+            timers.pop_one();
+        }
+        else
+            break;
+    }
+}
