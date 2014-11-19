@@ -1,7 +1,7 @@
 // Server represents a node in the network
 class Server
 {
-    std::string server_ip;      // ip address of the server
+    struct in_addr server_ip;   // ip address of the server
     unsigned short server_port; // port of the server
     unsigned short server_cost; // cost from us to this server
     unsigned server_id;         // ID of the server
@@ -29,7 +29,7 @@ class Configuration
     unsigned num_servers;                   // total number of servers
     unsigned num_neighbors;                 // number of neighbors to current node
 
-    std::string my_ip;                      // ip address of current node
+    struct in_addr my_ip;                   // ip address of current node
     unsigned short my_port;                 // port number of current node
     unsigned my_id;                         // ID of current node
 
@@ -72,6 +72,17 @@ while(true)
 }
 
 // multiple timer logic
+Idea:
+1. The idea to implement multiple logical timers is similar to how we
+implemented this in PA2
+2. We use select timeout to simulate on main timer
+3. Like in PA2, we have a our logical timers in a priority queue sorted in
+increasing order of firing times.
+4. When select returns, we see if the top logical timer is ready to be fired,
+we fire all timers that all ready to be fired.
+5. Adding a new logical timer is just adding a new node to priority queue
+6. To cancel a logical timer, we have to remove node from the priority queue
+
 void timer_interrupt(std::priority_queue<Timer*> timers)
 {
     while(!timers.empty())
