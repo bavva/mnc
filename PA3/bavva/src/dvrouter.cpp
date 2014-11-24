@@ -41,13 +41,13 @@ void DVRouter::initialize(std::string topology)
     // to create DVNodes(servers)
     std::string ipaddressstr;
     unsigned short port;
-    unsigned id;
+    int id;
 
     // for ipaddress stff
     struct in_addr ipaddr;
 
     // for neighbors cost
-    unsigned id1, id2;
+    int id1, id2;
     unsigned short cost;
 
     // read number of servers
@@ -187,9 +187,9 @@ void DVRouter::do_bind(void)
     }
 }
 
-void DVRouter::update(unsigned id1, unsigned id2, unsigned short cost)
+void DVRouter::update(int id1, int id2, unsigned short cost)
 {
-    unsigned id = 0;
+    int id = 0;
 
     if (id1 <= 0 || id1 > num_servers)
         return;
@@ -239,6 +239,7 @@ void DVRouter::process_command(std::string args[])
     else if (args[0] == "academic_integrity")
     {
         cse4589_print_and_log("I have read and understood the course academic integrity policy located at http://www.cse.buffalo.edu/faculty/dimitrio/courses/cse4589_f14/index.html#integrity");
+        std::cout << std::endl;
     }
     else
     {
@@ -284,7 +285,7 @@ void DVRouter::start(void)
                 if (nbytes == 0)
                     printf("Exiting at user's request\n");
                 else
-                    printf("recv failed with %d\n", nbytes);
+                    printf("read failed with %d\n", nbytes);
 
                 break;
             }

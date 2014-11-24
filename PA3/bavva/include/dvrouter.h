@@ -14,10 +14,10 @@
 class DVTimer
 {
 public:
-    unsigned node_id;   // ID of node corresponding to this timer
+    int node_id;        // ID of node corresponding to this timer
     time_t fire_at;     // time at which the timer should fire
 
-    DVTimer(unsigned node_id, time_t fire_at):node_id(node_id), fire_at(fire_at){};
+    DVTimer(int node_id, time_t fire_at):node_id(node_id), fire_at(fire_at){};
     ~DVTimer(){};
 };
 
@@ -27,11 +27,11 @@ public:
     struct in_addr node_ip;     // ip address of the node
     unsigned short node_port;   // port of the node
     unsigned short node_cost;   // cost from us to this node
-    unsigned node_id;           // ID of the node
+    int node_id;                // ID of the node
     bool is_neighbor;           // whether this node is our neighbor
 
     DVNode(struct in_addr node_ip, unsigned short node_port, unsigned short node_cost, 
-            unsigned node_id, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
+            int node_id, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
             node_cost(node_cost), node_id(node_id), is_neighbor(is_neighbor){};
     ~DVNode(){};
 };
@@ -44,7 +44,7 @@ private:
     unsigned num_neighbors;         // number of neighbors to current node
     struct in_addr my_ip;           // ip address of current node
     unsigned short my_port;         // port number of current node
-    unsigned my_id;                 // ID of current node
+    int my_id;                      // ID of current node
     time_t router_timeout;          // after this timeout, routers send routes
     unsigned pckts_recvd;           // number of packets received since last reset
 
@@ -79,7 +79,7 @@ private:
     void process_command(std::string args[]);
 
     // DVRouter functions
-    void update(unsigned id1, unsigned id2, unsigned short cost);
+    void update(int id1, int id2, unsigned short cost);
     void step(void);
     void packets(void);
     void display(void);
