@@ -118,6 +118,7 @@ void DVRouter::initialize(std::string topology)
 
         id = (id1 == my_id) ? id2 : id1;
         allnodes[id]->node_cost = cost;
+        allnodes[id]->is_neighbor = true;
         neighbors[id] = allnodes[id];
     }
 }
