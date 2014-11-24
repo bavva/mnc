@@ -126,6 +126,10 @@ void DVRouter::initialize(std::string topology)
         routing_costs[my_id - 1][id - 1] = cost;
         routing_costs[id - 1][my_id - 1] = cost;
     }
+
+    // allocate buffer to frame packet
+    packet_buffer_size = 8 + num_servers * 12;
+    packet_buffer = new char[packet_buffer_size];
 }
 
 void DVRouter::update_localip(void)
@@ -187,6 +191,69 @@ void DVRouter::do_bind(void)
     }
 }
 
+void DVRouter::frame_bcast_packet(void)
+{
+    char *writer = command_buffer;
+
+    // copy number of fields. this is equal to total servers
+    memcpy(writer, &num_servers, 2);
+    writer = writer + 2;
+
+    // copy our port
+    memcpy(writer, &my_port, 2);
+    writer = writer + 2;
+
+    // copy server ip address
+    memcpy(writer, &my_ip, 4);
+    writer = writer + 4;
+
+    // copy all other server details
+    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    {
+        DVNode *node = it->second;
+
+        // copy node ip address
+        memcpy(writer, &node->node_ip.s_addr, 4);
+        writer = writer + 4;
+
+        // copy node port
+        memcpy(writer, &node->node_port, 2);
+        writer = writer + 2;
+
+        // set next 2 bytes 0
+        memset(writer, 0, 2);
+        writer = writer + 2;
+
+        // copy node id 
+        memcpy(writer, &node->node_id, 2);
+        writer = writer + 2;
+
+        // copy node cost 
+        memcpy(writer, &node->node_cost, 2);
+        writer = writer + 2;
+    }
+}
+
+void DVRouter::broadcast_costs(void)
+{
+    DVNode *node;
+    struct sockaddr_in neighboraddr;
+
+    frame_bcast_packet();
+
+    for (std::map<int, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
+    {
+        node = it->second;
+
+        bzero(&neighboraddr,sizeof(neighboraddr));
+        neighboraddr.sin_family = AF_INET;
+        neighboraddr.sin_addr.s_addr = node->node_ip.s_addr;
+        neighboraddr.sin_port = htons(node->node_port);
+
+        sendto(main_fd, packet_buffer, packet_buffer_size, 0, (struct sockaddr *)&neighboraddr, sizeof(neighboraddr));
+    }
+}
+
 void DVRouter::update(int id1, int id2, unsigned short cost)
 {
     int id = 0;
@@ -210,6 +277,8 @@ void DVRouter::update(int id1, int id2, unsigned short cost)
 
     if (id != 0) // cost involvind us
         allnodes[id]->node_cost = cost;
+
+    broadcast_costs();
 }
 
 void DVRouter::process_command(std::string args[])
@@ -220,6 +289,7 @@ void DVRouter::process_command(std::string args[])
     }
     else if (args[0] == "step")
     {
+        broadcast_costs();
     }
     else if (args[0] == "packets")
     {
@@ -235,6 +305,8 @@ void DVRouter::process_command(std::string args[])
     }
     else if (args[0] == "dump")
     {
+        frame_bcast_packet();
+        cse4589_dump_packet(packet_buffer, packet_buffer_size);
     }
     else if (args[0] == "academic_integrity")
     {

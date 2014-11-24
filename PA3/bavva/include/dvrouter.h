@@ -49,8 +49,8 @@ private:
     unsigned pckts_recvd;           // number of packets received since last reset
 
     // other peers and timers
-    std::map<unsigned, DVNode*> allnodes;   // pointers to all router nodes
-    std::map<unsigned, DVNode*> neighbors;  // pointers to all neighbors
+    std::map<int, DVNode*> allnodes;   // pointers to all router nodes
+    std::map<int, DVNode*> neighbors;  // pointers to all neighbors
     std::list<DVTimer*> timers;             // list of timers in increasing order
 
     // routing information
@@ -63,6 +63,8 @@ private:
     // internal things
     char command_buffer[COMMAND_BUFFER];    // buffer to store command
     int write_here;                         // where to write in buffer
+    char *packet_buffer;                    // buffer to frame packet
+    int packet_buffer_size;                 // size of packet_buffer
 
 public:
     DVRouter(std::string topology, time_t router_timeout);
@@ -77,6 +79,8 @@ private:
     void initialize(std::string topology);
     void update_localip(void);
     void process_command(std::string args[]);
+    void frame_bcast_packet(void);
+    void broadcast_costs(void);
 
     // DVRouter functions
     void update(int id1, int id2, unsigned short cost);
