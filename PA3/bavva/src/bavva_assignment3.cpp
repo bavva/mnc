@@ -22,29 +22,58 @@
  */
 #include <iostream>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../include/global.h"
 #include "../include/logger.h"
+#include "../include/dvrouter.h"
 
 using namespace std;
 
-/**
- * main function
- *
- * @param  argc Number of arguments
- * @param  argv The argument list
- * @return 0 EXIT_SUCCESS
- */
+const int correctParamCount = 4;
+
+void printUsageAndExit(void)
+{
+    printf("Usage: assignment3 -t <path-to-topology-file> -i <routing-update-interval>\n");
+    exit(-1);
+}
+
 int main(int argc, char **argv)
 {
-	/*Init. Logger*/
-        cse4589_init_log();
+    std::string flag1, flag2, topology;
+    bool appIsServer = false;
+    int appPort = 0, routing_timeout = 0;
 
-	/* Clear LOGFILE and DUMPFILE */
-        fclose(fopen(LOGFILE, "w"));
-        fclose(fopen(DUMPFILE, "wb"));
+    /* Init. Logger */
+    cse4589_init_log();
 
-	/*Start Here*/
-	
-	return 0;
+    /* Clear LOGFILE and DUMPFILE */
+    fclose(fopen(LOGFILE, "w"));
+    fclose(fopen(DUMPFILE, "wb"));
+
+    if (argc != correctParamCount + 1)
+        printUsageAndExit();
+
+    // flags can be either -t/-T or -i/-I
+    flag1.assign(argv[1]);
+    flag2.assign(argv[3]);
+
+    if ((flag1 == "-t" || flag1 == "-T") && (flag2 == "-i" || flag2 == "-I"))
+    {
+        topology.assign(argv[2]);
+        routing_timeout = atoi(argv[4]);
+    }
+    else if ((flag1 == "-i" || flag1 == "-I") && (flag2 == "-t" || flag2 == "-T"))
+    {
+        routing_timeout = atoi(argv[2]);
+        topology.assign(argv[4]);
+    }
+    else
+        printUsageAndExit();
+
+    DVRouter *router = new DVRouter(topology, routing_timeout);
+    router->start();
+    delete router;
+
+    return 0;
 }

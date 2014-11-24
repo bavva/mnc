@@ -45,6 +45,7 @@ private:
     struct in_addr my_ip;           // ip address of current node
     unsigned short my_port;         // port number of current node
     unsigned my_id;                 // ID of current node
+    time_t router_timeout;          // after this timeout, routers send routes
 
     // other peers and timers
     std::map<unsigned, DVNode*> allnodes;   // pointers to all router nodes
@@ -63,7 +64,7 @@ private:
     int write_here;                         // where to write in buffer
 
 public:
-    DVRouter(std::string topology);
+    DVRouter(std::string topology, time_t router_timeout);
     ~DVRouter();
 
     // basic functions

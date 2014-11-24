@@ -5,16 +5,17 @@
 #include <cstring>
 #include <algorithm>
 
-#include "dvrouter.h"
+#include "../include/dvrouter.h"
 
 #define IP_IN_INTERNET "8.8.8.8"
 #define PORT_OF_IP_IN_INTERNET  53
 
 // class implementation
-DVRouter::DVRouter(std::string topology)
+DVRouter::DVRouter(std::string topology, time_t router_timeout)
 {
     // internal things
     write_here = 0;
+    this->router_timeout = router_timeout;
 
     // read topology file and update variables
     
