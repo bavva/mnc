@@ -215,6 +215,7 @@ void DVRouter::process_command(std::string args[])
 {
     if (args[0] == "update")
     {
+        update(atoi(argv[1].c_str()), atoi(argv[2].c_str()), atoi(argv[3].c_str()));
     }
     else if (args[0] == "step")
     {
