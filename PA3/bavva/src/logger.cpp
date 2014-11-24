@@ -71,7 +71,7 @@ void cse4589_init_log()
  * @param  ... Variable number of arguments to replace format specifiers
  */
 int ret_print, ret_log;
-void cse4589_print_and_log(char* format, ...)
+void cse4589_print_and_log(const char* format, ...)
 {
 	va_list args_pointer;
 

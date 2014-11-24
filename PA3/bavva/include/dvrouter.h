@@ -46,6 +46,7 @@ private:
     unsigned short my_port;         // port number of current node
     unsigned my_id;                 // ID of current node
     time_t router_timeout;          // after this timeout, routers send routes
+    unsigned pckts_recvd;           // number of packets received since last reset
 
     // other peers and timers
     std::map<unsigned, DVNode*> allnodes;   // pointers to all router nodes

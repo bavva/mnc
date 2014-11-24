@@ -18,6 +18,7 @@ DVRouter::DVRouter(std::string topology, time_t router_timeout)
 {
     // internal things
     write_here = 0;
+    pckts_recvd = 0;
     this->router_timeout = router_timeout;
     update_localip(); // has to be done before initialize
 
@@ -215,7 +216,7 @@ void DVRouter::process_command(std::string args[])
 {
     if (args[0] == "update")
     {
-        update(atoi(argv[1].c_str()), atoi(argv[2].c_str()), atoi(argv[3].c_str()));
+        update(atoi(args[1].c_str()), atoi(args[2].c_str()), atoi(args[3].c_str()));
     }
     else if (args[0] == "step")
     {

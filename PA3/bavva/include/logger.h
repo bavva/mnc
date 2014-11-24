@@ -9,7 +9,7 @@ extern char DUMPFILE[FILEPATH_LEN];
 extern int ret_print, ret_log;
 
 void cse4589_init_log();
-void cse4589_print_and_log(char* format, ...);
+void cse4589_print_and_log(const char* format, ...);
 int cse4589_dump_packet(const void* packet, size_t length);
 
 #endif
