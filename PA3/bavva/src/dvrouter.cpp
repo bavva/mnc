@@ -122,8 +122,8 @@ void DVRouter::initialize(std::string topology)
         neighbors[id] = allnodes[id];
 
         // update cost in routing table too
-        routing_costs[my_id][id] = cost;
-        routing_costs[id][my_id] = cost;
+        routing_costs[my_id - 1][id - 1] = cost;
+        routing_costs[id - 1][my_id - 1] = cost;
     }
 }
 
@@ -186,9 +186,62 @@ void DVRouter::do_bind(void)
     }
 }
 
+void DVRouter::update(unsigned id1, unsigned id2, unsigned short cost)
+{
+    unsigned id = 0;
+
+    if (id1 <= 0 || id1 > num_servers)
+        return;
+
+    if (id2 <= 0 || id2 > num_servers)
+        return;
+
+    if (id1 == id2)
+        return;
+
+    routing_costs[id1 - 1][id2 - 1] = cost;
+    routing_costs[id2 - 1][id1 - 1] = cost;
+
+    if (my_id == id1)
+        id = id2;
+    else if (my_id == id2)
+        id = id1;
+
+    if (id != 0) // cost involvind us
+        allnodes[id]->node_cost = cost;
+}
+
 void DVRouter::process_command(std::string args[])
 {
-    std::cout << "process command " << args[0] << std::endl;
+    if (args[0] == "update")
+    {
+    }
+    else if (args[0] == "step")
+    {
+    }
+    else if (args[0] == "packets")
+    {
+    }
+    else if (args[0] == "display")
+    {
+    }
+    else if (args[0] == "disable")
+    {
+    }
+    else if (args[0] == "crash")
+    {
+    }
+    else if (args[0] == "dump")
+    {
+    }
+    else if (args[0] == "academic_integrity")
+    {
+        cse4589_print_and_log("I have read and understood the course academic integrity policy located at http://www.cse.buffalo.edu/faculty/dimitrio/courses/cse4589_f14/index.html#integrity");
+    }
+    else
+    {
+        std::cout << "Unknown command " << args[0] << " entered\n";
+    }
 }
 
 void DVRouter::start(void)

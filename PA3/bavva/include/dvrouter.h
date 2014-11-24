@@ -78,7 +78,7 @@ private:
     void process_command(std::string args[]);
 
     // DVRouter functions
-    void update(unsigned server_id1, unsigned server_id2, unsigned short cost);
+    void update(unsigned id1, unsigned id2, unsigned short cost);
     void step(void);
     void packets(void);
     void display(void);
