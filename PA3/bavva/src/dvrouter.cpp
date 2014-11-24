@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <cstring>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <assert.h>
 
 #include "../include/dvrouter.h"
 
@@ -16,16 +19,107 @@ DVRouter::DVRouter(std::string topology, time_t router_timeout)
     // internal things
     write_here = 0;
     this->router_timeout = router_timeout;
+    update_localip(); // has to be done before initialize
 
     // read topology file and update variables
+    initialize(topology);
     
     // all this need to be done before start
-    update_localip();
     do_bind();
 }
 
 DVRouter::~DVRouter()
 {
+}
+
+void DVRouter::initialize(std::string topology)
+{
+    std::string line;
+    std::ifstream input(topology.c_str());
+
+    // to create DVNodes(servers)
+    std::string ipaddressstr;
+    unsigned short port;
+    unsigned id;
+
+    // for ipaddress stff
+    struct in_addr ipaddr;
+
+    // for neighbors cost
+    unsigned id1, id2;
+    unsigned short cost;
+
+    // read number of servers
+    {
+    std::getline(input, line);
+    std::istringstream iss(line);
+    iss >> num_servers;
+    assert(num_servers > 0);
+    }
+
+    // read number of neighbors
+    {
+    std::getline(input, line);
+    std::istringstream iss(line);
+    iss >> num_neighbors;
+    assert(num_neighbors > 0 && num_neighbors <= num_servers);
+    }
+
+    // create routing table
+    routing_costs = new unsigned short*[num_servers]; // allocate memory
+    for (int i = 0; i < num_servers; i++)
+    {
+        routing_costs[i] = new unsigned short[num_servers];
+    }
+    for (int i = 0; i < num_servers; i++) // initialize
+    {
+        for (int j = 0; j < num_servers; j++)
+        {
+            if (i == j)
+                routing_costs[i][j] = 0;
+            else
+                routing_costs[i][j] = INFINITE_COST;
+        }
+    }
+
+    // create all DVNodes(servers)
+    for (int i = 0; i < num_servers; i++)
+    {
+        std::getline(input, line);
+        std::istringstream iss(line);
+
+        iss >> id;
+        iss >> ipaddressstr;
+        iss >> port;
+
+        inet_aton(ipaddressstr.c_str(), &ipaddr);
+
+        // update our port
+        if (my_ip.s_addr == ipaddr.s_addr)
+        {
+            my_port = port;
+            my_id = id;
+        }
+        else
+        {
+            DVNode *node = new DVNode(ipaddr, port, INFINITE_COST, id, false);
+            allnodes[id] = node;
+        }
+    }
+
+    // read the costs of neighbors and update
+    while (std::getline(input, line))
+    {
+        std::istringstream iss(line);
+
+        iss >> id1;
+        iss >> id2;
+        iss >> cost;
+
+        id = (id1 == my_id) ? id2 : id1;
+        allnodes[id]->node_cost = cost;
+        neighbors[id] = allnodes[id];
+    }
 }
 
 void DVRouter::update_localip(void)

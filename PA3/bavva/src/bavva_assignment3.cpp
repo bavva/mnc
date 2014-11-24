@@ -30,6 +30,7 @@
 
 using namespace std;
 
+// global parameters
 const int correctParamCount = 4;
 
 void printUsageAndExit(void)

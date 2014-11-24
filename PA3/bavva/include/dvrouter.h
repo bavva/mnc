@@ -73,10 +73,11 @@ public:
 private:
     // basic functions
     void do_bind(void);
-
-    // DVRouter functions
+    void initialize(std::string topology);
     void update_localip(void);
     void process_command(std::string args[]);
+
+    // DVRouter functions
     void update(unsigned server_id1, unsigned server_id2, unsigned short cost);
     void step(void);
     void packets(void);
