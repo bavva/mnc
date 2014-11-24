@@ -55,9 +55,12 @@ private:
     unsigned short **routing_costs; // 2-D array of costs. routing_costs[x][y] means cost to send packet from x to y
 
     // fd stuff
-    int max_fd;                     // maximum of all fds
     int main_fd;                    // the main fd
     fd_set read_fds;                // monitor these for reading
+
+    // internal things
+    char command_buffer[COMMAND_BUFFER];    // buffer to store command
+    int write_here;                         // where to write in buffer
 
 public:
     DVRouter(std::string topology);
@@ -65,9 +68,14 @@ public:
 
     // basic functions
     void start(void);
+
+private:
+    // basic functions
     void do_bind(void);
 
     // DVRouter functions
+    void update_localip(void);
+    void process_command(std::string args[]);
     void update(unsigned server_id1, unsigned server_id2, unsigned short cost);
     void step(void);
     void packets(void);
