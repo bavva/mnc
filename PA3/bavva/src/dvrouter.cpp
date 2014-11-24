@@ -120,6 +120,10 @@ void DVRouter::initialize(std::string topology)
         allnodes[id]->node_cost = cost;
         allnodes[id]->is_neighbor = true;
         neighbors[id] = allnodes[id];
+
+        // update cost in routing table too
+        routing_costs[my_id][id] = cost;
+        routing_costs[id][my_id] = cost;
     }
 }
 
@@ -161,7 +165,7 @@ void DVRouter::update_localip(void)
 
 void DVRouter::do_bind(void)
 {
-    if((main_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_UDP)) < 0)
+    if((main_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
     {
         printf("socket() failed\n");
         exit(-1);
@@ -192,6 +196,7 @@ void DVRouter::start(void)
     int nbytes, max_fd;
     std::string args[CMD_MAX_ARGS];
     char space[] = " ";
+    struct timeval timeout;
 
     fd_set read_fds;
     fd_set temp_read_fds;
@@ -203,9 +208,12 @@ void DVRouter::start(void)
 
     while(1)
     {
+        timeout.tv_sec = router_timeout;
+        timeout.tv_usec = 0;
+
         temp_read_fds = read_fds;
 
-        if (select(max_fd + 1, &temp_read_fds, NULL, NULL, NULL) < 0)
+        if (select(max_fd + 1, &temp_read_fds, NULL, NULL, &timeout) < 0)
             break;
 
         if (FD_ISSET(main_fd, &temp_read_fds))
