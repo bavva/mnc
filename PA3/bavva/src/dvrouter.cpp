@@ -40,6 +40,10 @@ DVRouter::~DVRouter()
     for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
         delete it->second;
 
+    // free all timers
+    while (!timer_list.empty())
+        delete timer_list.front();
+
     // free packet buffer
     delete packet_buffer;
 }
@@ -114,7 +118,7 @@ void DVRouter::initialize(std::string topology)
         }
         else
         {
-            DVNode *node = new DVNode(ipaddr, port, INFINITE_COST, id, false);
+            DVNode *node = new DVNode(ipaddr, port, INFINITE_COST, id, -1, false);
             allnodes[id] = node;
         }
     }
@@ -141,6 +145,68 @@ void DVRouter::initialize(std::string topology)
     // allocate buffer to frame packet
     packet_buffer_size = 8 + num_servers * 12;
     packet_buffer = new char[packet_buffer_size];
+}
+
+void DVRouter::start_timer(int id)
+{
+    DVTimer *new_timer = NULL;
+    std::list<DVTimer*>::iterator it;
+
+    // don't start duplicate timer
+    if (timer_map.find(id) != timer_map.end())
+        return;
+
+    // create timer node
+    new_timer = new DVTimer(id, time(NULL) + router_timeout);
+
+    // insert in map and list
+    timer_list.push_back(new_timer);
+    it = timer_list.end();
+    timer_map[id] = --it;
+}
+
+void DVRouter::remove_timer(int id)
+{
+    DVTimer *timer = NULL;
+    std::list<DVTimer*>::iterator it;
+
+    // return if timer doen't exist
+    if (timer_map.find(id) == timer_map.end())
+        return;
+
+    // get timer and iterator of timer in the list
+    it = timer_map[id];
+    timer = *it;
+
+    // delete timer in list and map
+    timer_list.erase(it);
+    timer_map.erase(id);
+
+    // free timer
+    delete timer;
+}
+
+void DVRouter::on_fire(int id)
+{
+}
+
+void DVRouter::process_timers(void)
+{
+    time_t current_time = time(NULL);
+    DVTimer *timer = NULL;
+    int id;
+
+    while (!timer_list.empty())
+    {
+        timer = timer_list.front();
+        id = timer->node_id;
+
+        if (timer->fire_at > current_time)
+            break;
+
+        remove_timer(id);
+        on_fire(id);
+    }
 }
 
 void DVRouter::update_localip(void)

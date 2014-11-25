@@ -52,7 +52,8 @@ private:
     // other peers and timers
     std::map<int, DVNode*> allnodes;   // pointers to all router nodes
     std::map<int, DVNode*> neighbors;  // pointers to all neighbors
-    std::list<DVTimer*> timers;             // list of timers in increasing order
+    std::list<DVTimer*> timer_list;    // list of timers in increasing order
+    std::map<int, std::list<DVTimer*>::iterator> timer_map;     // map of all timers running
 
     // routing information
     unsigned short **routing_costs; // 2-D array of costs. routing_costs[x][y] means cost to send packet from x to y
@@ -82,6 +83,13 @@ private:
     void process_command(std::string args[]);
     void frame_bcast_packet(void);
     void broadcast_costs(void);
+
+    // timer functions
+    void start_timer(int id);
+    void remove_timer(int id);
+    void on_fire(int id);
+    void process_timers(void);
+
 
     // DVRouter functions
     void update(int id1, int id2, unsigned short cost);
