@@ -190,7 +190,7 @@ void DVRouter::on_fire(int id)
 {
 }
 
-void DVRouter::process_timers(void)
+time_t DVRouter::process_timers(void)
 {
     time_t current_time = time(NULL);
     DVTimer *timer = NULL;
@@ -202,11 +202,13 @@ void DVRouter::process_timers(void)
         id = timer->node_id;
 
         if (timer->fire_at > current_time)
-            break;
+            return timer->fire_at - current_time;
 
         remove_timer(id);
         on_fire(id);
     }
+
+    return router_timeout;
 }
 
 void DVRouter::update_localip(void)
@@ -412,13 +414,18 @@ void DVRouter::start(void)
 
     while(1)
     {
-        timeout.tv_sec = router_timeout;
-        timeout.tv_usec = 0;
+        // process any expired timers
+        timeout.tv_sec = process_timers(); // timeout.tv_sec has timeout for front timer
 
+        // fill stuff for select
+        timeout.tv_usec = 0;
         temp_read_fds = read_fds;
 
         if (select(max_fd + 1, &temp_read_fds, NULL, NULL, &timeout) < 0)
             break;
+
+        // process any expired timers
+        process_timers();
 
         if (FD_ISSET(main_fd, &temp_read_fds))
         {

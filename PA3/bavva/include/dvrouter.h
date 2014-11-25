@@ -88,7 +88,7 @@ private:
     void start_timer(int id);
     void remove_timer(int id);
     void on_fire(int id);
-    void process_timers(void);
+    time_t process_timers(void);
 
 
     // DVRouter functions
