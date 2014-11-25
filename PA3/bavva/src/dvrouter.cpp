@@ -135,6 +135,7 @@ void DVRouter::initialize(std::string topology)
         id = (id1 == my_id) ? id2 : id1;
         allnodes[id]->node_cost = cost;
         allnodes[id]->is_neighbor = true;
+        allnodes[id]->route_thru = id;
         neighbors[id] = allnodes[id];
 
         // update cost in routing table too
@@ -268,6 +269,10 @@ void DVRouter::do_bind(void)
         printf("bind() failed");
         exit(-1);
     }
+}
+
+void DVRouter::process_recvd_packet(void)
+{
 }
 
 void DVRouter::frame_bcast_packet(void)
@@ -429,7 +434,17 @@ void DVRouter::start(void)
 
         if (FD_ISSET(main_fd, &temp_read_fds))
         {
-            // recv packet and process
+            struct sockaddr their_addr;
+            socklen_t their_addr_len = sizeof(their_addr);
+
+            if ((nbytes = recvfrom(main_fd, packet_buffer, packet_buffer_size, 0, &their_addr, &their_addr_len)) == -1)
+            {
+                printf("recvfrom failed");
+                exit(1);
+            }
+
+            if (nbytes == packet_buffer_size)
+                process_recvd_packet();
         }
 
         if (FD_ISSET(STDIN_FILENO, &temp_read_fds))

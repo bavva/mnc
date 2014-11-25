@@ -83,6 +83,7 @@ private:
     void process_command(std::string args[]);
     void frame_bcast_packet(void);
     void broadcast_costs(void);
+    void process_recvd_packet(void);
 
     // timer functions
     void start_timer(int id);
