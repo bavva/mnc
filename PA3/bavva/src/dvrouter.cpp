@@ -31,6 +31,17 @@ DVRouter::DVRouter(std::string topology, time_t router_timeout)
 
 DVRouter::~DVRouter()
 {
+    // free routing table
+    for (int i = 0; i < num_servers; i++)
+        delete routing_costs[i];
+    delete routing_costs;
+
+    // free all nodes
+    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+        delete it->second;
+
+    // free packet buffer
+    delete packet_buffer;
 }
 
 void DVRouter::initialize(std::string topology)
@@ -277,8 +288,6 @@ void DVRouter::update(int id1, int id2, unsigned short cost)
 
     if (id != 0) // cost involvind us
         allnodes[id]->node_cost = cost;
-
-    broadcast_costs();
 }
 
 void DVRouter::process_command(std::string args[])
@@ -286,6 +295,7 @@ void DVRouter::process_command(std::string args[])
     if (args[0] == "update")
     {
         update(atoi(args[1].c_str()), atoi(args[2].c_str()), atoi(args[3].c_str()));
+        broadcast_costs();
     }
     else if (args[0] == "step")
     {
