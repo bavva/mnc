@@ -30,10 +30,11 @@ public:
     int node_id;                // ID of the node
     int route_thru;             // next hop id for this node
     bool is_neighbor;           // whether this node is our neighbor
+    int idle_count;             // count of how many heart beats it missed
 
     DVNode(struct in_addr node_ip, unsigned short node_port, unsigned short node_cost, 
             int node_id, int route_thru, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
-            node_cost(node_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor){};
+            node_cost(node_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor), idle_count(0){};
     ~DVNode(){};
 };
 

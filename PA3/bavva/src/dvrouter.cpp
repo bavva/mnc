@@ -189,6 +189,27 @@ void DVRouter::remove_timer(int id)
 
 void DVRouter::on_fire(int id)
 {
+    // if my_id, broadcast costs
+    if (id == my_id)
+    {
+        broadcast_costs();
+        return;
+    }
+
+    if (neighbors.find(id) == neighbors.end()) // not neighbor?
+        return;
+
+    neighbors[id]->idle_count++;
+
+    // missed 3 beats, set cost to infinity
+    if (neighbors[id]->idle_count >= 3)
+    {
+        update_linkcost(my_id, id, INFINITE_COST);
+        return;
+    }
+
+    // restart timer for this node
+    start_timer(id);
 }
 
 time_t DVRouter::process_timers(void)
@@ -339,6 +360,13 @@ void DVRouter::process_recvd_packet(void)
         if (cost_thru_sender < current_cost)
             update(my_id, node_id, cost_thru_sender, sender_id);
     }
+
+    // restart senders timer
+    remove_timer(sender_id);
+    start_timer(sender_id);
+
+    // reset idle count
+    neighbors[sender_id]->idle_count = 0;
 }
 
 void DVRouter::frame_bcast_packet(void)
@@ -379,7 +407,7 @@ void DVRouter::frame_bcast_packet(void)
         writer = writer + 2;
 
         // copy node cost 
-        memcpy(writer, &node->node_cost, 2);
+        memcpy(writer, &(routing_costs[my_id - 1][node->node_id - 1]), 2);
         writer = writer + 2;
     }
 }
@@ -389,6 +417,7 @@ void DVRouter::broadcast_costs(void)
     DVNode *node;
     struct sockaddr_in neighboraddr;
 
+    remove_timer(my_id);
     frame_bcast_packet();
 
     for (std::map<int, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
@@ -402,6 +431,8 @@ void DVRouter::broadcast_costs(void)
 
         sendto(main_fd, packet_buffer, packet_buffer_size, 0, (struct sockaddr *)&neighboraddr, sizeof(neighboraddr));
     }
+
+    start_timer(my_id);
 }
 
 void DVRouter::update(int id1, int id2, unsigned short cost, int via)
