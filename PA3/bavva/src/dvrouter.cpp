@@ -273,38 +273,44 @@ void DVRouter::do_bind(void)
 
 void DVRouter::process_recvd_packet(void)
 {
-    unsigned count;
-    unsigned short peer_port, remote_cost;
-    struct in_addr peer_ip;
     char *reader = command_buffer;
-    int peer_id = -1, remote_id;
+
+    // sender details
+    unsigned count;
+    unsigned short sender_port;
+    struct in_addr sender_ip;
+    int sender_id = -1;
+
+    // remote node details
+    unsigned short remote_cost;
+    int remote_id;
 
     // copy number of fields. this is equal to total servers
     memcpy(&count, reader, 2);
     reader = reader + 2;
 
-    // copy peer port
-    memcpy(&peer_port, reader, 2);
+    // copy sender port
+    memcpy(&sender_port, reader, 2);
     reader = reader + 2;
 
-    // copy peer ip
-    memcpy(&peer_ip, reader, 4);
+    // copy sender ip
+    memcpy(&sender_ip, reader, 4);
     reader = reader + 4;
 
-    // based on peer ip, get peer id
+    // based on sender ip, get sender id
     for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
-        if (peer_ip.s_addr == it->second->node_ip.s_addr)
+        if (sender_ip.s_addr == it->second->node_ip.s_addr)
         {
-            peer_id = it->second->node_id;
+            sender_id = it->second->node_id;
             break;
         }
     }
 
-    if (peer_id == -1)
+    if (sender_id == -1)
         return;
 
-    // for each server in packet
+    // for each server in packet, update routing table
     for (unsigned i = 0; i < count; i++)
     {
         reader = reader + 8;
@@ -316,6 +322,22 @@ void DVRouter::process_recvd_packet(void)
         // copy remote cost
         memcpy(&remote_cost, reader, 2);
         reader = reader + 2;
+
+        // update routing table
+        update(sender_id, remote_id, remote_cost, -1);
+    }
+
+    // check if we can route through sender
+    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    {
+        unsigned short current_cost, cost_thru_sender;
+        int node_id = it->second->node_id;
+
+        current_cost = routing_costs[my_id - 1][node_id - 1];
+        cost_thru_sender = routing_costs[my_id - 1][sender_id - 1] + routing_costs[sender_id - 1][node_id - 1];
+
+        if (cost_thru_sender < current_cost)
+            update(my_id, node_id, cost_thru_sender, sender_id);
     }
 }
 
@@ -410,6 +432,7 @@ void DVRouter::update(int id1, int id2, unsigned short cost, int via)
 void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
 {
     int id = -1;
+    unsigned short oldcost;
 
     if (id1 <= 0 || id1 > num_servers)
         return;
@@ -431,7 +454,16 @@ void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
     if (neighbors.find(id) == neighbors.end()) // neighbor doesn't exist
         return;
 
+    // change the link cost
+    oldcost = (neighbors[id])->node_cost;
     (neighbors[id])->node_cost = cost;
+
+    // update the cost of all neighbors affected by this change
+    for (std::map<int, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
+    {
+        if (it->second->route_thru == id)
+            update(my_id, id, routing_costs[my_id - 1][id - 1] - oldcost + cost, id);
+    }
 }
 
 void DVRouter::process_command(std::string args[])
