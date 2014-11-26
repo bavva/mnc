@@ -93,7 +93,8 @@ private:
 
 
     // DVRouter functions
-    void update(int id1, int id2, unsigned short cost);
+    void update(int id1, int id2, unsigned short cost, int via);
+    void update_linkcost(int id1, int id2, unsigned short cost);
     void step(void);
     void packets(void);
     void display(void);

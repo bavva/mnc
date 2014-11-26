@@ -273,6 +273,50 @@ void DVRouter::do_bind(void)
 
 void DVRouter::process_recvd_packet(void)
 {
+    unsigned count;
+    unsigned short peer_port, remote_cost;
+    struct in_addr peer_ip;
+    char *reader = command_buffer;
+    int peer_id = -1, remote_id;
+
+    // copy number of fields. this is equal to total servers
+    memcpy(&count, reader, 2);
+    reader = reader + 2;
+
+    // copy peer port
+    memcpy(&peer_port, reader, 2);
+    reader = reader + 2;
+
+    // copy peer ip
+    memcpy(&peer_ip, reader, 4);
+    reader = reader + 4;
+
+    // based on peer ip, get peer id
+    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    {
+        if (peer_ip.s_addr == it->second->node_ip.s_addr)
+        {
+            peer_id = it->second->node_id;
+            break;
+        }
+    }
+
+    if (peer_id == -1)
+        return;
+
+    // for each server in packet
+    for (unsigned i = 0; i < count; i++)
+    {
+        reader = reader + 8;
+
+        // copy remote id
+        memcpy(&remote_id, reader, 2);
+        reader = reader + 2;
+
+        // copy remote cost
+        memcpy(&remote_cost, reader, 2);
+        reader = reader + 2;
+    }
 }
 
 void DVRouter::frame_bcast_packet(void)
@@ -338,9 +382,9 @@ void DVRouter::broadcast_costs(void)
     }
 }
 
-void DVRouter::update(int id1, int id2, unsigned short cost)
+void DVRouter::update(int id1, int id2, unsigned short cost, int via)
 {
-    int id = 0;
+    int id = -1;
 
     if (id1 <= 0 || id1 > num_servers)
         return;
@@ -359,15 +403,44 @@ void DVRouter::update(int id1, int id2, unsigned short cost)
     else if (my_id == id2)
         id = id1;
 
-    if (id != 0) // cost involvind us
-        allnodes[id]->node_cost = cost;
+    if (id != -1) // this update involves us
+        neighbors[id]->route_thru = via;
+}
+
+void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
+{
+    int id = -1;
+
+    if (id1 <= 0 || id1 > num_servers)
+        return;
+
+    if (id2 <= 0 || id2 > num_servers)
+        return;
+
+    if (id1 == id2)
+        return;
+
+    if (my_id == id1)
+        id = id2;
+    else if (my_id == id2)
+        id = id1;
+
+    if (id == -1) // this is not a valid link
+        return;
+
+    if (neighbors.find(id) == neighbors.end()) // neighbor doesn't exist
+        return;
+
+    (neighbors[id])->node_cost = cost;
 }
 
 void DVRouter::process_command(std::string args[])
 {
     if (args[0] == "update")
     {
-        update(atoi(args[1].c_str()), atoi(args[2].c_str()), atoi(args[3].c_str()));
+        std::transform(args[3].begin(), args[3].end(), args[3].begin(), tolower);
+
+        update_linkcost(atoi(args[1].c_str()), atoi(args[2].c_str()), (args[3] == "inf") ? INFINITE_COST : atoi(args[3].c_str()));
         broadcast_costs();
     }
     else if (args[0] == "step")
