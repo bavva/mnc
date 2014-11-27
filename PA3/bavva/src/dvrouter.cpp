@@ -13,6 +13,15 @@
 #define IP_IN_INTERNET "8.8.8.8"
 #define PORT_OF_IP_IN_INTERNET  53
 
+// helper function
+unsigned short cost_sum(unsigned short cost1, unsigned short cost2)
+{
+    if (cost1 == INFINITE_COST || cost2 == INFINITE_COST)
+        return INFINITE_COST;
+
+    return cost1 + cost2;
+}
+
 // class implementation
 DVRouter::DVRouter(std::string topology, time_t router_timeout)
 {
@@ -237,8 +246,9 @@ void DVRouter::on_fire(int id)
     // missed 3 beats, set cost to infinity and reset idle count
     if (neighbors[id]->idle_count >= 3)
     {
-        update_linkcost(my_id, id, INFINITE_COST);
-        neighbors[id]->idle_count = 0;
+        if (neighbors[id]->route_thru == id)
+            update(my_id, id, INFINITE_COST, id);
+
         return;
     }
 
@@ -410,7 +420,7 @@ void DVRouter::process_recvd_packet(void)
         int node_id = it->second->node_id;
 
         current_cost = routing_costs[my_id - 1][node_id - 1];
-        cost_thru_sender = neighbors[sender_id]->link_cost + routing_costs[sender_id - 1][node_id - 1];
+        cost_thru_sender = cost_sum(neighbors[sender_id]->link_cost, routing_costs[sender_id - 1][node_id - 1]);
 
         if (cost_thru_sender < current_cost)
             update(my_id, node_id, cost_thru_sender, sender_id);
@@ -551,7 +561,6 @@ void DVRouter::update(int id1, int id2, unsigned short cost, int via)
 bool DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
 {
     int id = -1;
-    unsigned short oldcost;
 
     if (id1 <= 0 || id1 > num_servers)
     {
@@ -594,14 +603,13 @@ bool DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
     }
 
     // change the link cost
-    oldcost = (neighbors[id])->link_cost;
     (neighbors[id])->link_cost = cost;
 
     // update the cost to all nodes affected by this change
     for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         if (it->second->route_thru == id)
-            update(my_id, it->second->node_id, routing_costs[my_id - 1][it->second->node_id - 1] - oldcost + cost, id);
+            update(my_id, it->second->node_id, cost_sum(cost, routing_costs[id - 1][it->second->node_id - 1]), id);
     }
 
     return true;
