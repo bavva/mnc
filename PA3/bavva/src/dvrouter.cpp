@@ -57,7 +57,11 @@ DVRouter::~DVRouter()
 
     // free all timers
     while (!timer_list.empty())
+    {
         delete timer_list.front();
+        timer_list.pop_front();
+    }
+
     timer_list.clear();
     timer_map.clear();
 
@@ -351,7 +355,7 @@ void DVRouter::process_recvd_packet(void)
     unsigned short remote_cost;
     int remote_id;
 
-    // packet contents to print in fking order
+    // packet contents to print in order
     std::map<int, unsigned short> packet_contents;
 
     // increment received packet count
@@ -381,7 +385,7 @@ void DVRouter::process_recvd_packet(void)
 
     if (sender_id == -1)
     {
-        printf ("WARNING: received packet from anonymous :o \n");
+        printf ("WARNING: received packet from anonymous %s\n", inet_ntoa(sender_ip));
         return;
     }
     else
