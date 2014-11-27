@@ -213,7 +213,7 @@ void DVRouter::remove_timer(short id)
     // return if timer doen't exist
     if (timer_map.find(id) == timer_map.end())
     {
-        printf ("WARNING: Timer for %d is not running\n", id);
+        //printf ("WARNING: Timer for %d is not running\n", id);
         return;
     }
 
@@ -545,7 +545,7 @@ void DVRouter::update(short id1, short id2, unsigned short cost, short via)
         return;
     }
 
-    if (id1 == id2)
+    if (id1 == id2 && cost != 0)
     {
         printf ("WARNING: cost to same node is always 0. changing it is not allowed\n");
         return;
