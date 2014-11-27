@@ -42,8 +42,8 @@ class DVRouter
 {
 private:
     // main configuration
-    unsigned num_servers;           // total number of servers
-    unsigned num_neighbors;         // number of neighbors to current node
+    unsigned short num_servers;     // total number of servers
+    unsigned short num_neighbors;   // number of neighbors to current node
     struct in_addr my_ip;           // ip address of current node
     unsigned short my_port;         // port number of current node
     short my_id;                    // ID of current node

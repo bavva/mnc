@@ -346,7 +346,7 @@ void DVRouter::process_recvd_packet(void)
     char *reader = packet_buffer;
 
     // sender details
-    unsigned count;
+    unsigned short count;
     unsigned short sender_port;
     struct in_addr sender_ip;
     short sender_id = -1;
