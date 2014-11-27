@@ -11,6 +11,13 @@
 #include "global.h"
 #include "logger.h"
 
+typedef enum
+{
+    LINK_NORMAL,
+    LINK_TIMEDOUT,
+    LINK_DISABLED
+}LinkState;
+
 class DVTimer
 {
 public:
@@ -31,11 +38,22 @@ public:
     short route_thru;           // next hop id for this node
     bool is_neighbor;           // whether this node is our neighbor
     int idle_count;             // count of how many heart beats it missed
+    LinkState link_state;       // state of link
 
     DVNode(struct in_addr node_ip, unsigned short node_port, unsigned short link_cost, 
             short node_id, short route_thru, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
-            link_cost(link_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor), idle_count(0){};
+            link_cost(link_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor),
+            idle_count(0), link_state(LINK_NORMAL){};
     ~DVNode(){};
+
+    // functions
+    unsigned short get_linkcost(void)
+    {
+        if (link_state == LINK_NORMAL)
+            return link_cost;
+
+        return INFINITE_COST;
+    }
 };
 
 class DVRouter
@@ -102,6 +120,7 @@ private:
     // DVRouter functions
     void update(short id1, short id2, unsigned short cost, short via);
     bool update_linkcost(short id1, short id2, unsigned short cost);
+    bool update_linkstate(short id1, short id2, LinkState state);
     void check_alternate_routes(short id);
 };
 #endif /* _DVROUTER_H_ */

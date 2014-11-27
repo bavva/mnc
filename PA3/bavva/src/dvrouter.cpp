@@ -252,7 +252,7 @@ void DVRouter::on_fire(short id)
     if (neighbors[id]->idle_count >= 3)
     {
         if (neighbors[id]->route_thru == id)
-            update(my_id, id, INFINITE_COST, id);
+            update_linkstate(my_id, id, LINK_TIMEDOUT);
 
         return;
     }
@@ -391,6 +391,13 @@ void DVRouter::process_recvd_packet(void)
     else
     {
         cse4589_print_and_log("RECEIVED A MESSAGE FROM SERVER %d\n", sender_id);
+
+        // reset idle count
+        neighbors[sender_id]->idle_count = 0;
+
+        // reset link status
+        if (neighbors[sender_id]->link_state == LINK_TIMEDOUT)
+            neighbors[sender_id]->link_state = LINK_NORMAL;
     }
 
     // for each server in packet, update routing table
@@ -425,7 +432,7 @@ void DVRouter::process_recvd_packet(void)
         short node_id = it->second->node_id;
 
         current_cost = routing_costs[my_id - 1][node_id - 1];
-        cost_thru_sender = cost_sum(neighbors[sender_id]->link_cost, routing_costs[sender_id - 1][node_id - 1]);
+        cost_thru_sender = cost_sum(neighbors[sender_id]->get_linkcost(), routing_costs[sender_id - 1][node_id - 1]);
 
         if (allnodes[node_id]->route_thru != sender_id)
         {
@@ -442,9 +449,6 @@ void DVRouter::process_recvd_packet(void)
     // restart senders timer
     remove_timer(sender_id);
     start_timer(sender_id);
-
-    // reset idle count
-    neighbors[sender_id]->idle_count = 0;
 }
 
 void DVRouter::frame_bcast_packet(void)
@@ -631,6 +635,66 @@ bool DVRouter::update_linkcost(short id1, short id2, unsigned short cost)
     return true;
 }
 
+bool DVRouter::update_linkstate(short id1, short id2, LinkState state)
+{
+    short id = -1;
+
+    if (id1 <= 0 || id1 > num_servers)
+    {
+        error_msg = "Invalid id";
+        printf ("WARNING: invalid id %d\n", id2);
+        return false;
+    }
+
+    if (id2 <= 0 || id2 > num_servers)
+    {
+        error_msg = "Invalid id";
+        printf ("WARNING: invalid id %d\n", id2);
+        return false;
+    }
+
+    if (id1 == id2)
+    {
+        error_msg = "Invalid link. There are no self links";
+        printf ("WARNING: invalid link. there are no self links\n");
+        return false;
+    }
+
+    if (my_id == id1)
+        id = id2;
+    else if (my_id == id2)
+        id = id1;
+
+    if (id == -1) // this is not a valid link
+    {
+        error_msg = "Invalid link. This is not my link";
+        printf ("WARNING: invalid link. not our link\n");
+        return false;
+    }
+
+    if (neighbors.find(id) == neighbors.end()) // neighbor doesn't exist
+    {
+        error_msg = "Invalid link. This is not my neighbor";
+        printf ("WARNING: id %d is not our neighbor. can't update link cost\n", id);
+        return false;
+    }
+
+    // change the link state
+    neighbors[id]->link_state = state;
+
+    // update the cost to all nodes affected by this change
+    for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    {
+        if (it->second->route_thru == id)
+        {
+            update(my_id, it->second->node_id, cost_sum(neighbors[id]->get_linkcost(), routing_costs[id - 1][it->second->node_id - 1]), id);
+            check_alternate_routes(it->second->node_id);
+        }
+    }
+
+    return true;
+}
+
 void DVRouter::check_alternate_routes(short id)
 {
     if (id <= 0 || id > num_servers)
@@ -640,7 +704,7 @@ void DVRouter::check_alternate_routes(short id)
 
     for (std::map<short, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
     {
-        proposed_cost = cost_sum(it->second->link_cost, routing_costs[it->second->node_id - 1][id - 1]);
+        proposed_cost = cost_sum(it->second->get_linkcost(), routing_costs[it->second->node_id - 1][id - 1]);
 
         if (proposed_cost < current_cost)
         {
@@ -697,7 +761,7 @@ bool DVRouter::process_command(std::string args[])
     else if (args[0] == "disable")
     {
         // set the cost to infinite to disable the link
-        retval = update_linkcost(my_id, atoi(args[1].c_str()), INFINITE_COST);
+        retval = update_linkstate(my_id, atoi(args[1].c_str()), LINK_DISABLED);
     }
     else if (args[0] == "crash")
     {
