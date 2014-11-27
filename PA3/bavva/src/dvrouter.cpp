@@ -633,6 +633,21 @@ bool DVRouter::update_linkcost(short id1, short id2, unsigned short cost)
 
 void DVRouter::check_alternate_routes(short id)
 {
+    if (id <= 0 || id > num_servers)
+        return;
+
+    unsigned short proposed_cost, current_cost = routing_costs[my_id - 1][id - 1];
+
+    for (std::map<short, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
+    {
+        proposed_cost = cost_sum(it->second->link_cost, routing_costs[it->second->node_id - 1][id - 1]);
+
+        if (proposed_cost < current_cost)
+        {
+            current_cost = proposed_cost;
+            update(my_id, id, proposed_cost, it->second->node_id);
+        }
+    }
 }
 
 bool DVRouter::process_command(std::string args[])
