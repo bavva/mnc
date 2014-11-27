@@ -358,9 +358,6 @@ void DVRouter::process_recvd_packet(void)
     // packet contents to print in order
     std::map<short, unsigned short> packet_contents;
 
-    // increment received packet count
-    pckts_recvd++;
-
     // copy number of fields. this is equal to total servers
     memcpy(&count, reader, 2);
     reader = reader + 2;
@@ -388,9 +385,17 @@ void DVRouter::process_recvd_packet(void)
         printf ("WARNING: received packet from anonymous %s\n", inet_ntoa(sender_ip));
         return;
     }
+    else if (neighbors[sender_id]->link_state == LINK_DISABLED)
+    {
+        printf ("WARNING: ignoring packet received on disabled link\n");
+        return;
+    }
     else
     {
         cse4589_print_and_log("RECEIVED A MESSAGE FROM SERVER %d\n", sender_id);
+
+        // increment received packet count
+        pckts_recvd++;
 
         // reset idle count
         neighbors[sender_id]->idle_count = 0;
@@ -527,6 +532,10 @@ void DVRouter::broadcast_costs(void)
     for (std::map<short, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
     {
         node = it->second;
+
+        // don't send updates on disabled links
+        if (node->link_state == LINK_DISABLED)
+            continue;
 
         bzero(&neighboraddr, sizeof(neighboraddr));
         neighboraddr.sin_family = AF_INET;
