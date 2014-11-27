@@ -601,15 +601,42 @@ void DVRouter::process_command(std::string args[])
     }
     else if (args[0] == "packets")
     {
+        // print and reset received packet count
+        cse4589_print_and_log("%d\n", pckts_recvd);
+        pckts_recvd = 0;
     }
     else if (args[0] == "display")
     {
+        // std::map sorts elements by default
+        for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+        {
+            int destination_id, next_hop, cost;
+
+            destination_id = it->first;
+            cost = routing_costs[my_id - 1][destination_id - 1];
+
+            if (cost == INFINITE_COST)
+                next_hop = -1;
+            else
+                next_hop = it->second->route_thru;
+
+            cse4589_print_and_log("%-15d%-15d%-15d\n", destination_id, next_hop, cost);
+        }
     }
     else if (args[0] == "disable")
     {
+        // set the cost to infinite to disable the link
+        update_linkcost(my_id, atoi(args[1].c_str()), INFINITE_COST);
     }
     else if (args[0] == "crash")
     {
+        // close main fd and remove it from select
+        if (main_fd != 0)
+        {
+            FD_CLR(main_fd, &read_fds);
+            close(main_fd);
+            main_fd = 0;
+        }
     }
     else if (args[0] == "dump")
     {
