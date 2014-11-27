@@ -709,7 +709,6 @@ void DVRouter::start(void)
     char space[] = " ";
     struct timeval timeout;
 
-    fd_set read_fds;
     fd_set temp_read_fds;
 
     FD_SET(STDIN_FILENO, &read_fds);
@@ -732,7 +731,7 @@ void DVRouter::start(void)
         // process any expired timers
         process_timers();
 
-        if (FD_ISSET(main_fd, &temp_read_fds))
+        if (main_fd != 0 && FD_ISSET(main_fd, &temp_read_fds))
         {
             struct sockaddr their_addr;
             socklen_t their_addr_len = sizeof(their_addr);
