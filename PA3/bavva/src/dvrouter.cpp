@@ -153,7 +153,7 @@ void DVRouter::initialize(std::string topology)
     }
 
     // we should be having our id and port correctly updated by now
-    assert (my_port> 0 && my_id > 0);
+    // assert (my_port> 0 && my_id > 0);
 
     // read the costs of neighbors and update
     while (std::getline(input, line))
@@ -163,6 +163,12 @@ void DVRouter::initialize(std::string topology)
         iss >> id1;
         iss >> id2;
         iss >> cost;
+
+        if (my_id == -1)
+        {
+            my_id = id1;
+            my_port = allnodes[my_id]->node_port;
+        }
 
         // one id should be ours because this is neighbor
         if (id1 != my_id && id2 != my_id)
