@@ -234,8 +234,8 @@ void DVRouter::on_fire(short id)
     // if my_id, broadcast costs
     if (id == my_id)
     {
-        // inside broadcast_costs, we restart timer for my_id
         broadcast_costs();
+        start_timer(my_id);
         return;
     }
 
@@ -544,10 +544,6 @@ void DVRouter::broadcast_costs(void)
 
         sendto(main_fd, packet_buffer, packet_buffer_size, 0, (struct sockaddr *)&neighboraddr, sizeof(neighboraddr));
     }
-
-    // remove our timer and start again
-    remove_timer(my_id);
-    start_timer(my_id);
 }
 
 void DVRouter::update(short id1, short id2, unsigned short cost, short via)
