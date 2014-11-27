@@ -774,6 +774,8 @@ bool DVRouter::process_command(std::string args[])
         if (main_fd != 0)
         {
             FD_CLR(main_fd, &read_fds);
+            FD_CLR(STDIN_FILENO, &read_fds);
+
             close(main_fd);
             main_fd = 0;
 
