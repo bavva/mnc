@@ -50,7 +50,7 @@ DVRouter::~DVRouter()
     routing_costs = NULL;
 
     // free all nodes
-    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
         delete it->second;
     allnodes.clear();
     neighbors.clear();
@@ -85,13 +85,13 @@ void DVRouter::initialize(std::string topology)
     // to create DVNodes(servers)
     std::string ipaddressstr;
     unsigned short port;
-    int id;
+    short id;
 
     // for ipaddress stff
     struct in_addr ipaddr;
 
     // for neighbors cost
-    int id1, id2;
+    short id1, id2;
     unsigned short cost;
 
     // read number of servers
@@ -184,7 +184,7 @@ void DVRouter::initialize(std::string topology)
     packet_buffer = new char[packet_buffer_size];
 }
 
-void DVRouter::start_timer(int id)
+void DVRouter::start_timer(short id)
 {
     DVTimer *new_timer = NULL;
     std::list<DVTimer*>::iterator it;
@@ -205,7 +205,7 @@ void DVRouter::start_timer(int id)
     timer_map[id] = --it;
 }
 
-void DVRouter::remove_timer(int id)
+void DVRouter::remove_timer(short id)
 {
     DVTimer *timer = NULL;
     std::list<DVTimer*>::iterator it;
@@ -229,7 +229,7 @@ void DVRouter::remove_timer(int id)
     delete timer;
 }
 
-void DVRouter::on_fire(int id)
+void DVRouter::on_fire(short id)
 {
     // if my_id, broadcast costs
     if (id == my_id)
@@ -265,7 +265,7 @@ time_t DVRouter::process_timers(void)
 {
     time_t current_time = time(NULL);
     DVTimer *timer = NULL;
-    int id;
+    short id;
 
     while (!timer_list.empty())
     {
@@ -349,14 +349,14 @@ void DVRouter::process_recvd_packet(void)
     unsigned count;
     unsigned short sender_port;
     struct in_addr sender_ip;
-    int sender_id = -1;
+    short sender_id = -1;
 
     // remote node details
     unsigned short remote_cost;
-    int remote_id;
+    short remote_id;
 
     // packet contents to print in order
-    std::map<int, unsigned short> packet_contents;
+    std::map<short, unsigned short> packet_contents;
 
     // increment received packet count
     pckts_recvd++;
@@ -374,7 +374,7 @@ void DVRouter::process_recvd_packet(void)
     reader = reader + 4;
 
     // based on sender ip, get sender id
-    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         if (sender_ip.s_addr == it->second->node_ip.s_addr)
         {
@@ -415,14 +415,14 @@ void DVRouter::process_recvd_packet(void)
     }
 
     // print all packet contents
-    for (std::map<int, unsigned short>::iterator it = packet_contents.begin(); it != packet_contents.end(); it++)
+    for (std::map<short, unsigned short>::iterator it = packet_contents.begin(); it != packet_contents.end(); it++)
         cse4589_print_and_log("%-15d%-15d\n", it->first , it->second);
 
     // check if we can route through sender
-    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         unsigned short current_cost, cost_thru_sender;
-        int node_id = it->second->node_id;
+        short node_id = it->second->node_id;
 
         current_cost = routing_costs[my_id - 1][node_id - 1];
         cost_thru_sender = cost_sum(neighbors[sender_id]->link_cost, routing_costs[sender_id - 1][node_id - 1]);
@@ -477,7 +477,7 @@ void DVRouter::frame_bcast_packet(void)
     writer = writer + 2;
 
     // copy all other server details
-    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         DVNode *node = it->second;
 
@@ -512,7 +512,7 @@ void DVRouter::broadcast_costs(void)
     frame_bcast_packet();
 
     // send it to all neighbors
-    for (std::map<int, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
+    for (std::map<short, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
     {
         node = it->second;
 
@@ -529,9 +529,9 @@ void DVRouter::broadcast_costs(void)
     start_timer(my_id);
 }
 
-void DVRouter::update(int id1, int id2, unsigned short cost, int via)
+void DVRouter::update(short id1, short id2, unsigned short cost, short via)
 {
-    int id = -1;
+    short id = -1;
 
     if (id1 <= 0 || id1 > num_servers)
     {
@@ -563,9 +563,9 @@ void DVRouter::update(int id1, int id2, unsigned short cost, int via)
         allnodes[id]->route_thru = via;
 }
 
-bool DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
+bool DVRouter::update_linkcost(short id1, short id2, unsigned short cost)
 {
-    int id = -1;
+    short id = -1;
 
     if (id1 <= 0 || id1 > num_servers)
     {
@@ -611,7 +611,7 @@ bool DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
     (neighbors[id])->link_cost = cost;
 
     // update the cost to all nodes affected by this change
-    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+    for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         if (it->second->route_thru == id)
             update(my_id, it->second->node_id, cost_sum(cost, routing_costs[id - 1][it->second->node_id - 1]), id);
@@ -647,9 +647,10 @@ bool DVRouter::process_command(std::string args[])
     else if (args[0] == "display")
     {
         // std::map sorts elements by default
-        for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
+        for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
         {
-            int destination_id, next_hop, cost;
+            short destination_id, next_hop;
+            unsigned short cost;
 
             destination_id = it->first;
             cost = routing_costs[my_id - 1][destination_id - 1];

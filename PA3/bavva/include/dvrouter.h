@@ -14,10 +14,10 @@
 class DVTimer
 {
 public:
-    int node_id;        // ID of node corresponding to this timer
+    short node_id;      // ID of node corresponding to this timer
     time_t fire_at;     // time at which the timer should fire
 
-    DVTimer(int node_id, time_t fire_at):node_id(node_id), fire_at(fire_at){};
+    DVTimer(short node_id, time_t fire_at):node_id(node_id), fire_at(fire_at){};
     ~DVTimer(){};
 };
 
@@ -27,13 +27,13 @@ public:
     struct in_addr node_ip;     // ip address of the node
     unsigned short node_port;   // port of the node
     unsigned short link_cost;   // cost from us to this node
-    int node_id;                // ID of the node
-    int route_thru;             // next hop id for this node
+    short node_id;              // ID of the node
+    short route_thru;           // next hop id for this node
     bool is_neighbor;           // whether this node is our neighbor
     int idle_count;             // count of how many heart beats it missed
 
     DVNode(struct in_addr node_ip, unsigned short node_port, unsigned short link_cost, 
-            int node_id, int route_thru, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
+            short node_id, short route_thru, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
             link_cost(link_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor), idle_count(0){};
     ~DVNode(){};
 };
@@ -46,15 +46,15 @@ private:
     unsigned num_neighbors;         // number of neighbors to current node
     struct in_addr my_ip;           // ip address of current node
     unsigned short my_port;         // port number of current node
-    int my_id;                      // ID of current node
+    short my_id;                    // ID of current node
     time_t router_timeout;          // after this timeout, routers send routes
     unsigned pckts_recvd;           // number of packets received since last reset
 
     // other peers and timers
-    std::map<int, DVNode*> allnodes;   // pointers to all router nodes
-    std::map<int, DVNode*> neighbors;  // pointers to all neighbors
+    std::map<short, DVNode*> allnodes;   // pointers to all router nodes
+    std::map<short, DVNode*> neighbors;  // pointers to all neighbors
     std::list<DVTimer*> timer_list;    // list of timers in increasing order
-    std::map<int, std::list<DVTimer*>::iterator> timer_map;     // map of all timers running
+    std::map<short, std::list<DVTimer*>::iterator> timer_map;     // map of all timers running
     /*
      * Use timer_list to insert timers and top timers in order
      * Use timer_map when you want to delete a timer randomly.
@@ -93,21 +93,14 @@ private:
     void process_recvd_packet(void);
 
     // timer functions
-    void start_timer(int id);
-    void remove_timer(int id);
-    void on_fire(int id);
+    void start_timer(short id);
+    void remove_timer(short id);
+    void on_fire(short id);
     time_t process_timers(void);
 
 
     // DVRouter functions
-    void update(int id1, int id2, unsigned short cost, int via);
-    bool update_linkcost(int id1, int id2, unsigned short cost);
-    void step(void);
-    void packets(void);
-    void display(void);
-    void disable(unsigned server_id);
-    void crash(void);
-    void dump(void);
-    void academic_integrity(void);
+    void update(short id1, short id2, unsigned short cost, short via);
+    bool update_linkcost(short id1, short id2, unsigned short cost);
 };
 #endif /* _DVROUTER_H_ */
