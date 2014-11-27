@@ -560,7 +560,7 @@ void DVRouter::update(int id1, int id2, unsigned short cost, int via)
         id = id1;
 
     if (id != -1) // this update involves us
-        neighbors[id]->route_thru = via;
+        allnodes[id]->route_thru = via;
 }
 
 bool DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
