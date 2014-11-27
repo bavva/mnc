@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdint.h>
 #include <list>
 #include <map>
 
@@ -21,10 +22,10 @@ typedef enum
 class DVTimer
 {
 public:
-    short node_id;      // ID of node corresponding to this timer
-    time_t fire_at;     // time at which the timer should fire
+    int16_t node_id;        // ID of node corresponding to this timer
+    time_t fire_at;         // time at which the timer should fire
 
-    DVTimer(short node_id, time_t fire_at):node_id(node_id), fire_at(fire_at){};
+    DVTimer(int16_t node_id, time_t fire_at):node_id(node_id), fire_at(fire_at){};
     ~DVTimer(){};
 };
 
@@ -32,22 +33,22 @@ class DVNode
 {
 public:
     struct in_addr node_ip;     // ip address of the node
-    unsigned short node_port;   // port of the node
-    unsigned short link_cost;   // cost from us to this node
-    short node_id;              // ID of the node
-    short route_thru;           // next hop id for this node
+    uint16_t node_port;         // port of the node
+    uint16_t link_cost;         // cost from us to this node
+    int16_t node_id;            // ID of the node
+    int16_t route_thru;         // next hop id for this node
     bool is_neighbor;           // whether this node is our neighbor
     int idle_count;             // count of how many heart beats it missed
     LinkState link_state;       // state of link
 
-    DVNode(struct in_addr node_ip, unsigned short node_port, unsigned short link_cost, 
-            short node_id, short route_thru, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
+    DVNode(struct in_addr node_ip, uint16_t node_port, uint16_t link_cost, 
+            int16_t node_id, int16_t route_thru, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
             link_cost(link_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor),
             idle_count(0), link_state(LINK_NORMAL){};
     ~DVNode(){};
 
     // functions
-    unsigned short get_linkcost(void)
+    uint16_t get_linkcost(void)
     {
         if (link_state == LINK_NORMAL)
             return link_cost;
@@ -60,19 +61,19 @@ class DVRouter
 {
 private:
     // main configuration
-    unsigned short num_servers;     // total number of servers
-    unsigned short num_neighbors;   // number of neighbors to current node
-    struct in_addr my_ip;           // ip address of current node
-    unsigned short my_port;         // port number of current node
-    short my_id;                    // ID of current node
-    time_t router_timeout;          // after this timeout, routers send routes
-    unsigned pckts_recvd;           // number of packets received since last reset
+    uint16_t num_servers;     // total number of servers
+    uint16_t num_neighbors;   // number of neighbors to current node
+    struct in_addr my_ip;     // ip address of current node
+    uint16_t my_port;         // port number of current node
+    int16_t my_id;            // ID of current node
+    time_t router_timeout;    // after this timeout, routers send routes
+    unsigned pckts_recvd;     // number of packets received since last reset
 
     // other peers and timers
-    std::map<short, DVNode*> allnodes;   // pointers to all router nodes
-    std::map<short, DVNode*> neighbors;  // pointers to all neighbors
-    std::list<DVTimer*> timer_list;    // list of timers in increasing order
-    std::map<short, std::list<DVTimer*>::iterator> timer_map;     // map of all timers running
+    std::map<int16_t, DVNode*> allnodes;    // pointers to all router nodes
+    std::map<int16_t, DVNode*> neighbors;   // pointers to all neighbors
+    std::list<DVTimer*> timer_list;         // list of timers in increasing order
+    std::map<int16_t, std::list<DVTimer*>::iterator> timer_map;     // map of all timers running
     /*
      * Use timer_list to insert timers and top timers in order
      * Use timer_map when you want to delete a timer randomly.
@@ -80,7 +81,7 @@ private:
      */
 
     // routing information
-    unsigned short **routing_costs; // 2-D array of costs. routing_costs[x][y] means cost to send packet from x to y
+    uint16_t **routing_costs; // 2-D array of costs. routing_costs[x][y] means cost to send packet from x to y
 
     // fd stuff
     int main_fd;                    // the main fd
@@ -111,16 +112,16 @@ private:
     void process_recvd_packet(void);
 
     // timer functions
-    void start_timer(short id);
-    void remove_timer(short id);
-    void on_fire(short id);
+    void start_timer(int16_t id);
+    void remove_timer(int16_t id);
+    void on_fire(int16_t id);
     time_t process_timers(void);
 
 
     // DVRouter functions
-    void update(short id1, short id2, unsigned short cost, short via);
-    bool update_linkcost(short id1, short id2, unsigned short cost);
-    bool update_linkstate(short id1, short id2, LinkState state);
-    void check_alternate_routes(short id);
+    void update(int16_t id1, int16_t id2, uint16_t cost, int16_t via);
+    bool update_linkcost(int16_t id1, int16_t id2, uint16_t cost);
+    bool update_linkstate(int16_t id1, int16_t id2, LinkState state);
+    void check_alternate_routes(int16_t id);
 };
 #endif /* _DVROUTER_H_ */
