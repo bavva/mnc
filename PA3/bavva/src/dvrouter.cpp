@@ -343,7 +343,7 @@ void DVRouter::do_bind(void)
 
 void DVRouter::process_recvd_packet(void)
 {
-    char *reader = command_buffer;
+    char *reader = packet_buffer;
 
     // sender details
     unsigned count;
@@ -441,7 +441,7 @@ void DVRouter::process_recvd_packet(void)
 
 void DVRouter::frame_bcast_packet(void)
 {
-    char *writer = command_buffer;
+    char *writer = packet_buffer;
 
     // copy number of fields. this is equal to total servers
     memcpy(writer, &num_servers, 2);
