@@ -717,6 +717,9 @@ void DVRouter::start(void)
 
     max_fd = std::max(STDIN_FILENO, main_fd);
 
+    // start our timer
+    start_timer(my_id);
+
     while(1)
     {
         // process any expired timers
