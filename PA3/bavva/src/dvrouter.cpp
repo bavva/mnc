@@ -340,6 +340,9 @@ void DVRouter::process_recvd_packet(void)
     unsigned short remote_cost;
     int remote_id;
 
+    // packet contents to print in fking order
+    std::map<int, unsigned short> packet_contents;
+
     // increment received packet count
     pckts_recvd++;
 
@@ -370,6 +373,10 @@ void DVRouter::process_recvd_packet(void)
         printf ("WARNING: received packet from anonymous :o \n");
         return;
     }
+    else
+    {
+        cse4589_print_and_log("RECEIVED A MESSAGE FROM SERVER %d\n", sender_id);
+    }
 
     // for each server in packet, update routing table
     for (unsigned i = 0; i < count; i++)
@@ -385,9 +392,16 @@ void DVRouter::process_recvd_packet(void)
         memcpy(&remote_cost, reader, 2);
         reader = reader + 2;
 
+        packet_contents[remote_id] = remote_cost;
+
         // update routing table
-        update(sender_id, remote_id, remote_cost, -1);
+        if (remote_id != my_id)
+            update(sender_id, remote_id, remote_cost, -1);
     }
+
+    // print all packet contents
+    for (std::map<int, unsigned short>::iterator it = packet_contents.begin(); it != packet_contents.end(); it++)
+        cse4589_print_and_log("%-15d%-15d\n", it->first , it->second);
 
     // check if we can route through sender
     for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
@@ -534,27 +548,30 @@ void DVRouter::update(int id1, int id2, unsigned short cost, int via)
         neighbors[id]->route_thru = via;
 }
 
-void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
+bool DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
 {
     int id = -1;
     unsigned short oldcost;
 
     if (id1 <= 0 || id1 > num_servers)
     {
+        error_msg = "Invalid id";
         printf ("WARNING: invalid id %d\n", id2);
-        return;
+        return false;
     }
 
     if (id2 <= 0 || id2 > num_servers)
     {
+        error_msg = "Invalid id";
         printf ("WARNING: invalid id %d\n", id2);
-        return;
+        return false;
     }
 
     if (id1 == id2)
     {
+        error_msg = "Invalid link. There are no self links";
         printf ("WARNING: invalid link. there are no self links\n");
-        return;
+        return false;
     }
 
     if (my_id == id1)
@@ -564,14 +581,16 @@ void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
 
     if (id == -1) // this is not a valid link
     {
+        error_msg = "Invalid link. This is not my link";
         printf ("WARNING: invalid link. not our link\n");
-        return;
+        return false;
     }
 
     if (neighbors.find(id) == neighbors.end()) // neighbor doesn't exist
     {
+        error_msg = "Invalid link. This is not my neighbor";
         printf ("WARNING: id %d is not our neighbor. can't update link cost\n", id);
-        return;
+        return false;
     }
 
     // change the link cost
@@ -584,26 +603,33 @@ void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
         if (it->second->route_thru == id)
             update(my_id, it->second->node_id, routing_costs[my_id - 1][it->second->node_id - 1] - oldcost + cost, id);
     }
+
+    return true;
 }
 
-void DVRouter::process_command(std::string args[])
+bool DVRouter::process_command(std::string args[])
 {
+    bool retval = false;
+
     if (args[0] == "update")
     {
         std::transform(args[3].begin(), args[3].end(), args[3].begin(), tolower);
 
-        update_linkcost(atoi(args[1].c_str()), atoi(args[2].c_str()), (args[3] == "inf") ? INFINITE_COST : atoi(args[3].c_str()));
-        broadcast_costs();
+        retval = update_linkcost(atoi(args[1].c_str()), atoi(args[2].c_str()), (args[3] == "inf") ? INFINITE_COST : atoi(args[3].c_str()));
+        if (retval)
+            broadcast_costs();
     }
     else if (args[0] == "step")
     {
         broadcast_costs();
+        retval = true;
     }
     else if (args[0] == "packets")
     {
         // print and reset received packet count
         cse4589_print_and_log("%d\n", pckts_recvd);
         pckts_recvd = 0;
+        retval = true;
     }
     else if (args[0] == "display")
     {
@@ -622,11 +648,12 @@ void DVRouter::process_command(std::string args[])
 
             cse4589_print_and_log("%-15d%-15d%-15d\n", destination_id, next_hop, cost);
         }
+        retval = true;
     }
     else if (args[0] == "disable")
     {
         // set the cost to infinite to disable the link
-        update_linkcost(my_id, atoi(args[1].c_str()), INFINITE_COST);
+        retval = update_linkcost(my_id, atoi(args[1].c_str()), INFINITE_COST);
     }
     else if (args[0] == "crash")
     {
@@ -636,22 +663,34 @@ void DVRouter::process_command(std::string args[])
             FD_CLR(main_fd, &read_fds);
             close(main_fd);
             main_fd = 0;
+
+            retval = true;
+        }
+        else
+        {
+            retval = false;
+            error_msg = "All connections are already closed";
         }
     }
     else if (args[0] == "dump")
     {
         frame_bcast_packet();
         cse4589_dump_packet(packet_buffer, packet_buffer_size);
+        retval = true;
     }
     else if (args[0] == "academic_integrity")
     {
         cse4589_print_and_log("I have read and understood the course academic integrity policy located at http://www.cse.buffalo.edu/faculty/dimitrio/courses/cse4589_f14/index.html#integrity");
         printf("\n");
+        retval = true;
     }
     else
     {
         std::cout << "Unknown command " << args[0] << " entered\n";
+        retval = false;
     }
+
+    return retval;
 }
 
 void DVRouter::start(void)
@@ -732,7 +771,10 @@ void DVRouter::start(void)
                 }
 
                 std::transform(args[0].begin(), args[0].end(), args[0].begin(), tolower);
-                process_command(args);
+                if (process_command(args))
+                    cse4589_print_and_log("%s:SUCCESS\n", args[0].c_str());
+                else
+                    cse4589_print_and_log("%s:%s\n", args[0].c_str(), error_msg.c_str());
 
                 for (int i = 0; i < CMD_MAX_ARGS; i++)
                     args[i].clear();

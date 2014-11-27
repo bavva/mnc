@@ -73,6 +73,7 @@ private:
     int write_here;                         // where to write in buffer
     char *packet_buffer;                    // buffer to frame packet
     int packet_buffer_size;                 // size of packet_buffer
+    std::string error_msg;                  // error message
 
 public:
     DVRouter(std::string topology, time_t router_timeout);
@@ -86,7 +87,7 @@ private:
     void do_bind(void);
     void initialize(std::string topology);
     void update_localip(void);
-    void process_command(std::string args[]);
+    bool process_command(std::string args[]);
     void frame_bcast_packet(void);
     void broadcast_costs(void);
     void process_recvd_packet(void);
@@ -100,7 +101,7 @@ private:
 
     // DVRouter functions
     void update(int id1, int id2, unsigned short cost, int via);
-    void update_linkcost(int id1, int id2, unsigned short cost);
+    bool update_linkcost(int id1, int id2, unsigned short cost);
     void step(void);
     void packets(void);
     void display(void);
