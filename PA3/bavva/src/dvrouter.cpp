@@ -418,7 +418,7 @@ void DVRouter::process_recvd_packet(void)
     for (std::map<short, unsigned short>::iterator it = packet_contents.begin(); it != packet_contents.end(); it++)
         cse4589_print_and_log("%-15d%-15d\n", it->first , it->second);
 
-    // check if we can route through sender
+    // check if we can route through sender. if we are already routing through sender, update cost
     for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         unsigned short current_cost, cost_thru_sender;
@@ -427,8 +427,16 @@ void DVRouter::process_recvd_packet(void)
         current_cost = routing_costs[my_id - 1][node_id - 1];
         cost_thru_sender = cost_sum(neighbors[sender_id]->link_cost, routing_costs[sender_id - 1][node_id - 1]);
 
-        if (cost_thru_sender < current_cost)
+        if (allnodes[node_id]->route_thru != sender_id)
+        {
+            if (cost_thru_sender < current_cost)
+                update(my_id, node_id, cost_thru_sender, sender_id);
+        }
+        else
+        {
             update(my_id, node_id, cost_thru_sender, sender_id);
+            check_alternate_routes(node_id);
+        }
     }
 
     // restart senders timer
@@ -614,10 +622,17 @@ bool DVRouter::update_linkcost(short id1, short id2, unsigned short cost)
     for (std::map<short, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         if (it->second->route_thru == id)
+        {
             update(my_id, it->second->node_id, cost_sum(cost, routing_costs[id - 1][it->second->node_id - 1]), id);
+            check_alternate_routes(it->second->node_id);
+        }
     }
 
     return true;
+}
+
+void DVRouter::check_alternate_routes(short id)
+{
 }
 
 bool DVRouter::process_command(std::string args[])

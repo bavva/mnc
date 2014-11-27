@@ -102,5 +102,6 @@ private:
     // DVRouter functions
     void update(short id1, short id2, unsigned short cost, short via);
     bool update_linkcost(short id1, short id2, unsigned short cost);
+    void check_alternate_routes(short id);
 };
 #endif /* _DVROUTER_H_ */
