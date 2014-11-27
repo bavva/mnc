@@ -695,6 +695,7 @@ bool DVRouter::process_command(std::string args[])
     else
     {
         std::cout << "Unknown command " << args[0] << " entered\n";
+        error_msg = "Unknown command";
         retval = false;
     }
 
