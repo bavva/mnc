@@ -161,7 +161,8 @@ void DVRouter::initialize(std::string topology)
         iss >> cost;
 
         // one id should be ours because this is neighbor
-        assert (id1 == my_id || id2 == my_id);
+        if (id1 != my_id && id2 != my_id)
+            continue;
 
         id = (id1 == my_id) ? id2 : id1;
         allnodes[id]->link_cost = cost;
