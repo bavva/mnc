@@ -17,6 +17,9 @@
 DVRouter::DVRouter(std::string topology, time_t router_timeout)
 {
     // internal things
+    my_id = -1;
+    my_port = 0;
+    main_fd = 0;
     write_here = 0;
     pckts_recvd = 0;
     this->router_timeout = router_timeout;
@@ -35,17 +38,30 @@ DVRouter::~DVRouter()
     for (int i = 0; i < num_servers; i++)
         delete routing_costs[i];
     delete routing_costs;
+    routing_costs = NULL;
 
     // free all nodes
     for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
         delete it->second;
+    allnodes.clear();
+    neighbors.clear();
 
     // free all timers
     while (!timer_list.empty())
         delete timer_list.front();
+    timer_list.clear();
+    timer_map.clear();
 
     // free packet buffer
     delete packet_buffer;
+    packet_buffer = NULL;
+
+    // close main fd
+    if (main_fd > 0)
+    {
+        close(main_fd);
+        main_fd = 0;
+    }
 }
 
 void DVRouter::initialize(std::string topology)
@@ -84,10 +100,10 @@ void DVRouter::initialize(std::string topology)
     // create routing table
     routing_costs = new unsigned short*[num_servers]; // allocate memory
     for (int i = 0; i < num_servers; i++)
-    {
         routing_costs[i] = new unsigned short[num_servers];
-    }
-    for (int i = 0; i < num_servers; i++) // initialize
+
+    // fill routing table
+    for (int i = 0; i < num_servers; i++)
     {
         for (int j = 0; j < num_servers; j++)
         {
@@ -110,7 +126,7 @@ void DVRouter::initialize(std::string topology)
 
         inet_aton(ipaddressstr.c_str(), &ipaddr);
 
-        // update our port
+        // if our ip, update our port and our id
         if (my_ip.s_addr == ipaddr.s_addr)
         {
             my_port = port;
@@ -123,6 +139,9 @@ void DVRouter::initialize(std::string topology)
         }
     }
 
+    // we should be having our id and port correctly updated by now
+    assert (my_port> 0 && my_id > 0);
+
     // read the costs of neighbors and update
     while (std::getline(input, line))
     {
@@ -132,15 +151,18 @@ void DVRouter::initialize(std::string topology)
         iss >> id2;
         iss >> cost;
 
+        // one id should be ours because this is neighbor
+        assert (id1 == my_id || id2 == my_id);
+
         id = (id1 == my_id) ? id2 : id1;
-        allnodes[id]->node_cost = cost;
+        allnodes[id]->link_cost = cost;
         allnodes[id]->is_neighbor = true;
-        allnodes[id]->route_thru = id;
         neighbors[id] = allnodes[id];
 
         // update cost in routing table too
         routing_costs[my_id - 1][id - 1] = cost;
         routing_costs[id - 1][my_id - 1] = cost;
+        allnodes[id]->route_thru = id;
     }
 
     // allocate buffer to frame packet
@@ -155,7 +177,10 @@ void DVRouter::start_timer(int id)
 
     // don't start duplicate timer
     if (timer_map.find(id) != timer_map.end())
+    {
+        printf ("WARNING: Timer for %d is already running\n", id);
         return;
+    }
 
     // create timer node
     new_timer = new DVTimer(id, time(NULL) + router_timeout);
@@ -173,7 +198,10 @@ void DVRouter::remove_timer(int id)
 
     // return if timer doen't exist
     if (timer_map.find(id) == timer_map.end())
+    {
+        printf ("WARNING: Timer for %d is not running\n", id);
         return;
+    }
 
     // get timer and iterator of timer in the list
     it = timer_map[id];
@@ -192,19 +220,25 @@ void DVRouter::on_fire(int id)
     // if my_id, broadcast costs
     if (id == my_id)
     {
+        // inside broadcast_costs, we restart timer for my_id
         broadcast_costs();
         return;
     }
 
     if (neighbors.find(id) == neighbors.end()) // not neighbor?
+    {
+        printf ("WARNING: some how a timer was started for non neighbor %d!!\n", id);
         return;
+    }
 
+    // increment idle counter
     neighbors[id]->idle_count++;
 
-    // missed 3 beats, set cost to infinity
+    // missed 3 beats, set cost to infinity and reset idle count
     if (neighbors[id]->idle_count >= 3)
     {
         update_linkcost(my_id, id, INFINITE_COST);
+        neighbors[id]->idle_count = 0;
         return;
     }
 
@@ -306,6 +340,9 @@ void DVRouter::process_recvd_packet(void)
     unsigned short remote_cost;
     int remote_id;
 
+    // increment received packet count
+    pckts_recvd++;
+
     // copy number of fields. this is equal to total servers
     memcpy(&count, reader, 2);
     reader = reader + 2;
@@ -329,11 +366,15 @@ void DVRouter::process_recvd_packet(void)
     }
 
     if (sender_id == -1)
+    {
+        printf ("WARNING: received packet from anonymous :o \n");
         return;
+    }
 
     // for each server in packet, update routing table
     for (unsigned i = 0; i < count; i++)
     {
+        // we only want id and cost, lets skip the nonsense
         reader = reader + 8;
 
         // copy remote id
@@ -355,7 +396,7 @@ void DVRouter::process_recvd_packet(void)
         int node_id = it->second->node_id;
 
         current_cost = routing_costs[my_id - 1][node_id - 1];
-        cost_thru_sender = routing_costs[my_id - 1][sender_id - 1] + routing_costs[sender_id - 1][node_id - 1];
+        cost_thru_sender = neighbors[sender_id]->link_cost + routing_costs[sender_id - 1][node_id - 1];
 
         if (cost_thru_sender < current_cost)
             update(my_id, node_id, cost_thru_sender, sender_id);
@@ -384,6 +425,27 @@ void DVRouter::frame_bcast_packet(void)
     // copy server ip address
     memcpy(writer, &my_ip, 4);
     writer = writer + 4;
+
+    // we should include entry saying cost to self is 0
+    // copy server ip address
+    memcpy(writer, &my_ip, 4);
+    writer = writer + 4;
+
+    // copy our port
+    memcpy(writer, &my_port, 2);
+    writer = writer + 2;
+
+    // set next 2 bytes 0
+    memset(writer, 0, 2);
+    writer = writer + 2;
+
+    // copy our id
+    memcpy(writer, &my_id, 2);
+    writer = writer + 2;
+
+    // cost to self is 0
+    memset(writer, 0, 2);
+    writer = writer + 2;
 
     // copy all other server details
     for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
@@ -417,14 +479,15 @@ void DVRouter::broadcast_costs(void)
     DVNode *node;
     struct sockaddr_in neighboraddr;
 
-    remove_timer(my_id);
+    // create packet to be sent to all
     frame_bcast_packet();
 
+    // send it to all neighbors
     for (std::map<int, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
     {
         node = it->second;
 
-        bzero(&neighboraddr,sizeof(neighboraddr));
+        bzero(&neighboraddr, sizeof(neighboraddr));
         neighboraddr.sin_family = AF_INET;
         neighboraddr.sin_addr.s_addr = node->node_ip.s_addr;
         neighboraddr.sin_port = htons(node->node_port);
@@ -432,6 +495,8 @@ void DVRouter::broadcast_costs(void)
         sendto(main_fd, packet_buffer, packet_buffer_size, 0, (struct sockaddr *)&neighboraddr, sizeof(neighboraddr));
     }
 
+    // remove our timer and start again
+    remove_timer(my_id);
     start_timer(my_id);
 }
 
@@ -440,13 +505,22 @@ void DVRouter::update(int id1, int id2, unsigned short cost, int via)
     int id = -1;
 
     if (id1 <= 0 || id1 > num_servers)
+    {
+        printf ("WARNING: invalid id %d\n", id1);
         return;
+    }
 
     if (id2 <= 0 || id2 > num_servers)
+    {
+        printf ("WARNING: invalid id %d\n", id2);
         return;
+    }
 
     if (id1 == id2)
+    {
+        printf ("WARNING: cost to same node is always 0. changing it is not allowed\n");
         return;
+    }
 
     routing_costs[id1 - 1][id2 - 1] = cost;
     routing_costs[id2 - 1][id1 - 1] = cost;
@@ -466,13 +540,22 @@ void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
     unsigned short oldcost;
 
     if (id1 <= 0 || id1 > num_servers)
+    {
+        printf ("WARNING: invalid id %d\n", id2);
         return;
+    }
 
     if (id2 <= 0 || id2 > num_servers)
+    {
+        printf ("WARNING: invalid id %d\n", id2);
         return;
+    }
 
     if (id1 == id2)
+    {
+        printf ("WARNING: invalid link. there are no self links\n");
         return;
+    }
 
     if (my_id == id1)
         id = id2;
@@ -480,20 +563,26 @@ void DVRouter::update_linkcost(int id1, int id2, unsigned short cost)
         id = id1;
 
     if (id == -1) // this is not a valid link
+    {
+        printf ("WARNING: invalid link. not our link\n");
         return;
+    }
 
     if (neighbors.find(id) == neighbors.end()) // neighbor doesn't exist
+    {
+        printf ("WARNING: id %d is not our neighbor. can't update link cost\n", id);
         return;
+    }
 
     // change the link cost
-    oldcost = (neighbors[id])->node_cost;
-    (neighbors[id])->node_cost = cost;
+    oldcost = (neighbors[id])->link_cost;
+    (neighbors[id])->link_cost = cost;
 
-    // update the cost of all neighbors affected by this change
-    for (std::map<int, DVNode*>::iterator it = neighbors.begin(); it != neighbors.end(); it++)
+    // update the cost to all nodes affected by this change
+    for (std::map<int, DVNode*>::iterator it = allnodes.begin(); it != allnodes.end(); it++)
     {
         if (it->second->route_thru == id)
-            update(my_id, id, routing_costs[my_id - 1][id - 1] - oldcost + cost, id);
+            update(my_id, it->second->node_id, routing_costs[my_id - 1][it->second->node_id - 1] - oldcost + cost, id);
     }
 }
 
@@ -530,7 +619,7 @@ void DVRouter::process_command(std::string args[])
     else if (args[0] == "academic_integrity")
     {
         cse4589_print_and_log("I have read and understood the course academic integrity policy located at http://www.cse.buffalo.edu/faculty/dimitrio/courses/cse4589_f14/index.html#integrity");
-        std::cout << std::endl;
+        printf("\n");
     }
     else
     {
@@ -581,6 +670,8 @@ void DVRouter::start(void)
 
             if (nbytes == packet_buffer_size)
                 process_recvd_packet();
+            else
+                printf ("WARNING: packet of size %d is received. dropping it. we only process %d size packets\n", nbytes, packet_buffer_size);
         }
 
         if (FD_ISSET(STDIN_FILENO, &temp_read_fds))

@@ -26,15 +26,15 @@ class DVNode
 public:
     struct in_addr node_ip;     // ip address of the node
     unsigned short node_port;   // port of the node
-    unsigned short node_cost;   // cost from us to this node
+    unsigned short link_cost;   // cost from us to this node
     int node_id;                // ID of the node
     int route_thru;             // next hop id for this node
     bool is_neighbor;           // whether this node is our neighbor
     int idle_count;             // count of how many heart beats it missed
 
-    DVNode(struct in_addr node_ip, unsigned short node_port, unsigned short node_cost, 
+    DVNode(struct in_addr node_ip, unsigned short node_port, unsigned short link_cost, 
             int node_id, int route_thru, bool is_neighbor):node_ip(node_ip), node_port(node_port), 
-            node_cost(node_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor), idle_count(0){};
+            link_cost(link_cost), node_id(node_id), route_thru(route_thru), is_neighbor(is_neighbor), idle_count(0){};
     ~DVNode(){};
 };
 
@@ -55,6 +55,11 @@ private:
     std::map<int, DVNode*> neighbors;  // pointers to all neighbors
     std::list<DVTimer*> timer_list;    // list of timers in increasing order
     std::map<int, std::list<DVTimer*>::iterator> timer_map;     // map of all timers running
+    /*
+     * Use timer_list to insert timers and top timers in order
+     * Use timer_map when you want to delete a timer randomly.
+     * Get iterator from map and delete that in list
+     */
 
     // routing information
     unsigned short **routing_costs; // 2-D array of costs. routing_costs[x][y] means cost to send packet from x to y
