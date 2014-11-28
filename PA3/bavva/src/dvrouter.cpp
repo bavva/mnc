@@ -27,20 +27,20 @@ void host2net2bytes (void *dst, void *src)
     *((uint16_t *)dst) = htons(*((uint16_t *)src));
 }
 
-void host2net4bytes (void *dst, void *src)
-{
-    *((uint32_t *)dst) = htonl(*((uint32_t *)src));
-}
+//void host2net4bytes (void *dst, void *src)
+//{
+//    *((uint32_t *)dst) = htonl(*((uint32_t *)src));
+//}
 
 void net2host2bytes (void *dst, void *src)
 {
     *((uint16_t *)dst) = ntohs(*((uint16_t *)src));
 }
 
-void net2host4bytes (void *dst, void *src)
-{
-    *((uint32_t *)dst) = ntohl(*((uint32_t *)src));
-}
+//void net2host4bytes (void *dst, void *src)
+//{
+//    *((uint32_t *)dst) = ntohl(*((uint32_t *)src));
+//}
 
 // class implementation
 DVRouter::DVRouter(std::string topology, time_t router_timeout)
@@ -393,7 +393,7 @@ void DVRouter::process_recvd_packet(void)
     reader = reader + 2;
 
     // copy sender ip
-    net2host4bytes(&sender_ip, reader);
+    memcpy(&sender_ip, reader, 4);
     reader = reader + 4;
 
     // based on sender ip, get sender id
@@ -495,12 +495,12 @@ void DVRouter::frame_bcast_packet(void)
     writer = writer + 2;
 
     // copy server ip address
-    host2net4bytes(writer, &my_ip);
+    memcpy(writer, &my_ip, 4);
     writer = writer + 4;
 
     // we should include entry saying cost to self is 0
     // copy server ip address
-    host2net4bytes(writer, &my_ip);
+    memcpy(writer, &my_ip, 4);
     writer = writer + 4;
 
     // copy our port
@@ -525,7 +525,7 @@ void DVRouter::frame_bcast_packet(void)
         DVNode *node = it->second;
 
         // copy node ip address
-        host2net4bytes(writer, &(node->node_ip.s_addr));
+        memcpy(writer, &(node->node_ip.s_addr), 4);
         writer = writer + 4;
 
         // copy node port
