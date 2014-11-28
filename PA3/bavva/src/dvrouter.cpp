@@ -24,46 +24,22 @@ uint16_t cost_sum(uint16_t cost1, uint16_t cost2)
 
 void host2net2bytes (void *dst, void *src)
 {
-    uint16_t data; // buffer
-
-    memcpy(&data, src, 2); // read 2 bytes from source
-
-    data = htons(data); // convert it to network byte order
-
-    memcpy(dst, &data, 2); // copy it to destination
+    *((uint16_t *)dst) = htons(*((uint16_t *)src));
 }
 
 void host2net4bytes (void *dst, void *src)
 {
-    uint32_t data; // buffer
-
-    memcpy(&data, src, 4); // read 2 bytes from source
-
-    data = htonl(data); // convert it to network byte order
-
-    memcpy(dst, &data, 4); // copy it to destination
+    *((uint32_t *)dst) = htonl(*((uint32_t *)src));
 }
 
 void net2host2bytes (void *dst, void *src)
 {
-    uint16_t data; // buffer
-
-    memcpy(&data, src, 2); // read 2 bytes from source
-
-    data = ntohs(data); // convert it to host byte order
-
-    memcpy(dst, &data, 4); // copy it to destination
+    *((uint16_t *)dst) = ntohs(*((uint16_t *)src));
 }
 
 void net2host4bytes (void *dst, void *src)
 {
-    uint32_t data; // buffer
-
-    memcpy(&data, src, 4); // read 2 bytes from source
-
-    data = ntohl(data); // convert it to network byte order
-
-    memcpy(dst, &data, 4); // copy it to destination
+    *((uint32_t *)dst) = ntohl(*((uint32_t *)src));
 }
 
 // class implementation
@@ -549,11 +525,11 @@ void DVRouter::frame_bcast_packet(void)
         DVNode *node = it->second;
 
         // copy node ip address
-        host2net4bytes(writer, &node->node_ip.s_addr);
+        host2net4bytes(writer, &(node->node_ip.s_addr));
         writer = writer + 4;
 
         // copy node port
-        host2net2bytes(writer, &node->node_port);
+        host2net2bytes(writer, &(node->node_port));
         writer = writer + 2;
 
         // set next 2 bytes 0
@@ -561,7 +537,7 @@ void DVRouter::frame_bcast_packet(void)
         writer = writer + 2;
 
         // copy node id 
-        host2net2bytes(writer, &node->node_id);
+        host2net2bytes(writer, &(node->node_id));
         writer = writer + 2;
 
         // copy node cost 
