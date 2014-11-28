@@ -22,6 +22,50 @@ uint16_t cost_sum(uint16_t cost1, uint16_t cost2)
     return cost1 + cost2;
 }
 
+void host2net2bytes (void *dst, void *src)
+{
+    uint16_t data; // buffer
+
+    memcpy(&data, src, 2); // read 2 bytes from source
+
+    data = htons(data); // convert it to network byte order
+
+    memcpy(dst, &data, 2); // copy it to destination
+}
+
+void host2net4bytes (void *dst, void *src)
+{
+    uint32_t data; // buffer
+
+    memcpy(&data, src, 4); // read 2 bytes from source
+
+    data = htonl(data); // convert it to network byte order
+
+    memcpy(dst, &data, 4); // copy it to destination
+}
+
+void net2host2bytes (void *dst, void *src)
+{
+    uint16_t data; // buffer
+
+    memcpy(&data, src, 2); // read 2 bytes from source
+
+    data = ntohs(data); // convert it to host byte order
+
+    memcpy(dst, &data, 4); // copy it to destination
+}
+
+void net2host4bytes (void *dst, void *src)
+{
+    uint32_t data; // buffer
+
+    memcpy(&data, src, 4); // read 2 bytes from source
+
+    data = ntohl(data); // convert it to network byte order
+
+    memcpy(dst, &data, 4); // copy it to destination
+}
+
 // class implementation
 DVRouter::DVRouter(std::string topology, time_t router_timeout)
 {
@@ -365,15 +409,15 @@ void DVRouter::process_recvd_packet(void)
     std::map<int16_t, uint16_t> packet_contents;
 
     // copy number of fields. this is equal to total servers
-    memcpy(&count, reader, 2);
+    net2host2bytes(&count, reader);
     reader = reader + 2;
 
     // copy sender port
-    memcpy(&sender_port, reader, 2);
+    net2host2bytes(&sender_port, reader);
     reader = reader + 2;
 
     // copy sender ip
-    memcpy(&sender_ip, reader, 4);
+    net2host4bytes(&sender_ip, reader);
     reader = reader + 4;
 
     // based on sender ip, get sender id
@@ -418,11 +462,11 @@ void DVRouter::process_recvd_packet(void)
         reader = reader + 8;
 
         // copy remote id
-        memcpy(&remote_id, reader, 2);
+        net2host2bytes(&remote_id, reader);
         reader = reader + 2;
 
         // copy remote cost
-        memcpy(&remote_cost, reader, 2);
+        net2host2bytes(&remote_cost, reader);
         reader = reader + 2;
 
         packet_contents[remote_id] = remote_cost;
@@ -467,24 +511,24 @@ void DVRouter::frame_bcast_packet(void)
     char *writer = packet_buffer;
 
     // copy number of fields. this is equal to total servers
-    memcpy(writer, &num_servers, 2);
+    host2net2bytes(writer, &num_servers);
     writer = writer + 2;
 
     // copy our port
-    memcpy(writer, &my_port, 2);
+    host2net2bytes(writer, &my_port);
     writer = writer + 2;
 
     // copy server ip address
-    memcpy(writer, &my_ip, 4);
+    host2net4bytes(writer, &my_ip);
     writer = writer + 4;
 
     // we should include entry saying cost to self is 0
     // copy server ip address
-    memcpy(writer, &my_ip, 4);
+    host2net4bytes(writer, &my_ip);
     writer = writer + 4;
 
     // copy our port
-    memcpy(writer, &my_port, 2);
+    host2net2bytes(writer, &my_port);
     writer = writer + 2;
 
     // set next 2 bytes 0
@@ -492,7 +536,7 @@ void DVRouter::frame_bcast_packet(void)
     writer = writer + 2;
 
     // copy our id
-    memcpy(writer, &my_id, 2);
+    host2net2bytes(writer, &my_id);
     writer = writer + 2;
 
     // cost to self is 0
@@ -505,11 +549,11 @@ void DVRouter::frame_bcast_packet(void)
         DVNode *node = it->second;
 
         // copy node ip address
-        memcpy(writer, &node->node_ip.s_addr, 4);
+        host2net4bytes(writer, &node->node_ip.s_addr);
         writer = writer + 4;
 
         // copy node port
-        memcpy(writer, &node->node_port, 2);
+        host2net2bytes(writer, &node->node_port);
         writer = writer + 2;
 
         // set next 2 bytes 0
@@ -517,11 +561,11 @@ void DVRouter::frame_bcast_packet(void)
         writer = writer + 2;
 
         // copy node id 
-        memcpy(writer, &node->node_id, 2);
+        host2net2bytes(writer, &node->node_id);
         writer = writer + 2;
 
         // copy node cost 
-        memcpy(writer, &(routing_costs[my_id - 1][node->node_id - 1]), 2);
+        host2net2bytes(writer, &(routing_costs[my_id - 1][node->node_id - 1]));
         writer = writer + 2;
     }
 }
