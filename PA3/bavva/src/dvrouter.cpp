@@ -806,6 +806,9 @@ bool DVRouter::process_command(std::string args[])
             main_fd = 0;
 
             retval = true;
+
+            // WORKAROUND: hang on crash nonsense
+            while(1);
         }
         else
         {
