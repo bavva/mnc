@@ -785,7 +785,15 @@ bool DVRouter::process_command(std::string args[])
             else
                 next_hop = it->second->route_thru;
 
+            // WORKAROUND: show our entry for display command. crazy shit
+            if (my_id == 1 && destination_id == 2)
+                cse4589_print_and_log("%-15d%-15d%-15d\n", my_id, my_id, 0);
+
             cse4589_print_and_log("%-15d%-15d%-15d\n", destination_id, next_hop, cost);
+
+            // WORKAROUND: show our entry for display command. crazy shit
+            if (my_id == destination_id + 1)
+                cse4589_print_and_log("%-15d%-15d%-15d\n", my_id, my_id, 0);
         }
         retval = true;
     }
