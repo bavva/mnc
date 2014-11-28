@@ -413,7 +413,7 @@ void DVRouter::process_recvd_packet(void)
     }
     else if (neighbors[sender_id]->link_state == LINK_DISABLED)
     {
-        printf ("WARNING: ignoring packet received on disabled link\n");
+        //printf ("WARNING: ignoring packet received on disabled link\n");
         return;
     }
     else
