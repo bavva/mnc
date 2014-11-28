@@ -917,11 +917,13 @@ void DVRouter::start(void)
                     token = strtok(NULL, space);
                 }
 
+                std::string original_command = args[0];
                 std::transform(args[0].begin(), args[0].end(), args[0].begin(), tolower);
+
                 if (process_command(args))
-                    cse4589_print_and_log("%s:SUCCESS\n", args[0].c_str());
+                    cse4589_print_and_log("%s:SUCCESS\n", original_command.c_str());
                 else
-                    cse4589_print_and_log("%s:%s\n", args[0].c_str(), error_msg.c_str());
+                    cse4589_print_and_log("%s:%s\n", original_command.c_str(), error_msg.c_str());
 
                 for (int i = 0; i < CMD_MAX_ARGS; i++)
                     args[i].clear();
